@@ -6,9 +6,9 @@ impl Contract {
         &mut self,
         owner: Option<AccountId>,
         oracle_contract: Option<AccountId>,
-        safe_ratio: Option<Fraction>,
-        bid_fee: Option<Fraction>,
-        max_premium_rate: Option<Fraction>,
+        safe_ratio: Option<D128>,
+        bid_fee: Option<D128>,
+        max_premium_rate: Option<D128>,
         liquidation_threshold: Option<Balance>,
         price_timeframe: Option<u64>,
     ) {

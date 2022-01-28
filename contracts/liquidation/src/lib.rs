@@ -2,37 +2,27 @@ use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Serialize, Deserialize};
 use near_sdk::json_types::U128;
 use near_sdk::collections::{LookupMap};
-use near_sdk::{assert_one_yocto, env, near_bindgen, AccountId, Balance, PanicOnDefault};
-use uint::construct_uint;
+use near_sdk::{env, near_bindgen, AccountId, Balance, PanicOnDefault};
+use math::{D128};
 
 mod internal;
+mod math;
 mod owner;
 mod token_receiver;
+mod utils;
 mod views;
-
-construct_uint! {
-    /// 256-bit unsigned integer.
-    pub struct U256(4);
-}
-
-#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone, Debug, PartialEq)]
-#[serde(crate = "near_sdk::serde")]
-pub struct Fraction {
-    pub numerator: u32,
-    pub denominator: u32,
-}
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[serde(crate = "near_sdk::serde")]
 pub struct Bid {
     pub amount: U128,
-    pub premium_rate: Fraction,
+    pub premium_rate: D128,
 }
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[serde(crate = "near_sdk::serde")]
 pub struct PriceResponse {
-    pub rate: Fraction,
+    pub rate: D128,
     pub last_updated_base: u64,
     pub last_updated_quote: u64,
 }
@@ -44,21 +34,16 @@ pub struct TimeConstraints {
     pub valid_timeframe: u64,
 }
 
-impl Fraction {
-    pub fn mul(&self, num: u128) -> u128 {
-        (U256::from(num) * U256::from(self.numerator) 
-            / U256::from(self.denominator)).as_u128()
-    }
-}
+
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
 pub struct Contract {
     owner: AccountId,
     oracle_contract: AccountId,
-    safe_ratio: Fraction,
-    bid_fee: Fraction,
-    max_premium_rate: Fraction,
+    safe_ratio: D128,
+    bid_fee: D128,
+    max_premium_rate: D128,
     liquidation_threshold: Balance,
     price_timeframe: u64,
     bids: LookupMap<AccountId, Bid>,
@@ -70,9 +55,9 @@ impl Contract {
     pub fn new(
         owner: AccountId,
         oracle_contract: AccountId,
-        safe_ratio: Fraction,
-        bid_fee: Fraction,
-        max_premium_rate: Fraction,
+        safe_ratio: D128,
+        bid_fee: D128,
+        max_premium_rate: D128,
         liquidation_threshold: Balance,
         price_timeframe: u64
     ) -> Self {
@@ -95,7 +80,7 @@ impl Contract {
         fee_address: AccountId,
         amount: U128,
     ) {
-        let bid: Bid = self.get_bid(&liquidator);
+        let bid: Bid = self.internal_get_bid(&liquidator);
 
         let price: PriceResponse = self.query_price(
             Some(TimeConstraints {
@@ -104,8 +89,30 @@ impl Contract {
             }),
         );
 
-        let collateral_value: u128 = price.rate.mul(amount.0);
-        let premium_rate: Fraction = std::cmp::min(bid.premium_rate, self.max_premium_rate);
+        let collateral_value: Balance = price.rate * amount.0;
+        let required_stable: Balance = (D128::one() - std::cmp::min(bid.premium_rate, self.max_premium_rate))
+            * collateral_value;
         
+        if required_stable > bid.amount.0 {
+            panic!("Insufficient Bid Balance. Required: {}", required_stable);
+        }
+
+        // Update bid
+        if bid.amount.0 == required_stable {
+            self.internal_remove_bid(&liquidator);
+        } else {
+            self.internal_store_bid(
+                &liquidator,
+                Bid {
+                    amount: (bid.amount.0 - required_stable).into(),
+                    ..bid
+                }
+            );
+        }
+
+        let bid_fee: Balance = self.bid_fee * required_stable;
+        let repay_address: Balance = required_stable - bid_fee;
+
+        // TODO: cross-contract calls
     }
 }
