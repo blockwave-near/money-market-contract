@@ -91,4 +91,30 @@ impl Contract {
 
         instance
     }
+
+    pub fn retract_bid(&mut self, amount: Option<U128>) {
+        let bidder: AccountId = env::predecessor_account_id();
+
+        let bid: Bid = self.internal_get_bid(&bidder).expect("No bids with the specified information exist");
+
+        let amount: U128 = amount.unwrap_or(bid.amount);
+
+        if amount.0 > bid.amount.0 {
+            panic!("Retract amount cannot exceed bid balance: {}", bid.amount.0);
+        }
+
+        if amount.0 == bid.amount.0 {
+            self.internal_remove_bid(&bidder);
+        } else {
+            self.internal_store_bid(
+                &bidder,
+                Bid {
+                    amount: (bid.amount.0 - amount.0).into(),
+                    ..bid
+                }
+            );
+        }
+
+        fungible_token_transfer(self.stable_coin_contract.clone(), bidder, amount.0);
+    }
 }
