@@ -10,6 +10,10 @@ fn alice() -> AccountId {
     "alice.near".to_string()
 }
 
+fn bob() -> AccountId {
+    "bob.near".to_string()
+}
+
 fn oracle() -> AccountId {
     "oracle.near".to_string()
 }
@@ -144,7 +148,7 @@ fn ri_empty_tags_nonce_works() {
         .to_string(),
     );
 
-    assert!(contract.data_requests.get(&0).is_some());
+    assert!(contract.data_requests.get(&alice()).is_some());
 }
 
 #[test]
@@ -171,7 +175,7 @@ fn ri_some_tags_nonce_works() {
         .to_string(),
     );
 
-    assert!(contract.data_requests.get(&0).is_some());
+    assert!(contract.data_requests.get(&alice()).is_some());
 }
 
 #[test]
@@ -181,7 +185,7 @@ fn ri_nonce_iterates_properly() {
     let mut contract = Contract::new(
         oracle(),
         token(),
-        Some(vec![serde_json::from_str("\"alice.near\"").unwrap()]),
+        Some(vec![serde_json::from_str("\"alice.near\"").unwrap(), serde_json::from_str("\"bob.near\"").unwrap()]),
     );
 
     contract.ft_on_transfer(
@@ -199,7 +203,7 @@ fn ri_nonce_iterates_properly() {
     );
 
     contract.ft_on_transfer(
-        alice(),
+        bob(),
         U128(100),
         serde_json::json!({
             "sources": Some(Vec::<String>::new()),
@@ -212,5 +216,5 @@ fn ri_nonce_iterates_properly() {
         .to_string(),
     );
 
-    assert!(contract.data_requests.get(&1).is_some());
+    assert!(contract.data_requests.get(&bob()).is_some());
 }

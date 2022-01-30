@@ -24,7 +24,7 @@ pub struct Contract {
     pub oracle: AccountId,
     pub payment_token: AccountId,
     pub nonce: Nonce,
-    pub data_requests: LookupMap<u64, DataRequestDetails>,
+    pub data_requests: LookupMap<AccountId, DataRequestDetails>,
     pub whitelist: UnorderedSet<AccountId>, // accounts allowed to call create_data_request(). if len() == 0, no whitelist (any account can make data request)
 }
 
@@ -68,12 +68,12 @@ impl Contract {
         payload: NewDataRequestArgs,
     ) -> Promise {
         self.assert_caller(&self.payment_token);
-        let request_id = self.nonce.get_and_incr();
+        let request_id = creator.clone();
 
         // insert request_id into tags
         let mut payload = payload;
         let mut tags = payload.tags;
-        tags.push(request_id.to_string());
+        tags.push(request_id.clone());
         payload.tags = tags.to_vec();
 
         let dr = DataRequestDetails {
@@ -104,7 +104,7 @@ impl Contract {
         );
         assert_eq!(env::attached_deposit(), 1);
 
-        let request_id = tags.last().unwrap().parse::<u64>().unwrap();
+        let request_id = tags.last().unwrap();
         let mut request = self.data_requests.get(&request_id).unwrap();
         request.status = RequestStatus::Finalized(outcome);
         self.data_requests.insert(&request_id, &request);
