@@ -57,6 +57,10 @@ impl D128 {
         Self::new(num * u128::pow(10, (Self::get_decimal() as i32 + exp) as u32))
     }
 
+    pub fn ratio(numer: u128, denom: u128) -> Self {
+        D128::new(numer * DECIMAL) / D128::new(denom * DECIMAL)
+    }
+
     pub fn mul_int(self, other: u128) -> u128 {
         ((U256::from(self.num.0) * U256::from(other)) / U256::from(DECIMAL)).as_u128()
     }
