@@ -64,6 +64,10 @@ impl D128 {
     pub fn mul_int(self, other: u128) -> u128 {
         ((U256::from(self.num.0) * U256::from(other)) / U256::from(DECIMAL)).as_u128()
     }
+
+    pub fn as_u128(self) -> u128 {
+        self.num.0 / DECIMAL
+    }
 }
 
 impl Add<D128> for D128 {
