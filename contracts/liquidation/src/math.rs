@@ -139,7 +139,7 @@ impl Mul<u128> for D128 {
     fn mul(self, other: u128) -> Self {
         let num: u128 = ((U256::from(self.num.0) * U256::from(other)) / U256::from(DECIMAL)).as_u128();
 
-        Self::new(num)
+        Self::new(num * DECIMAL)
     }
 }
 
@@ -150,7 +150,7 @@ impl Mul<D128> for u128 {
     fn mul(self, other: D128) -> D128 {
         let num: u128 = ((U256::from(self) * U256::from(other.num.0)) / U256::from(DECIMAL)).as_u128();
 
-        D128::new(num)
+        D128::new(num * DECIMAL)
     }
 }
 
