@@ -90,8 +90,8 @@ impl Contract {
 
     pub(crate) fn internal_create_new_price_request(&self) {
         fungible_token_transfer_call(
-            self.payment_token, 
-            self.requester_contract, 
+            self.oracle_payment_token.clone(), 
+            self.requester_contract.clone(), 
             1_000_000_000_000_000_000_000_000, 
             // query NEAR price
             format!("{{\"sources\": [{{ \"end_point\": \"https://api.coingecko.com/api/v3/simple/price?ids=tether%2Cnear&vs_currencies=usd\", \"source_path\":\"near.usd\"}}], \"tags\":[\"pricing\",\"near\"],  \"challenge_period\":\"120000000000\", \"settlement_time\":\"1\", \"data_type\":{{\"Number\":\"{}\"}}, \"creator\":\"{}\"}}", DECIMAL, env::current_account_id())

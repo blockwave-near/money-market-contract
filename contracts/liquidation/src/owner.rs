@@ -5,8 +5,10 @@ impl Contract {
     pub fn update_config(
         &mut self,
         owner: Option<AccountId>,
+        bnear_contract: Option<AccountId>,
+        stable_coin_contract: Option<AccountId>,
         requester_contract: Option<AccountId>,
-        payment_token: Option<AccountId>,
+        oracle_payment_token: Option<AccountId>,
         safe_ratio: Option<D128>,
         bid_fee: Option<D128>,
         max_premium_rate: Option<D128>,
@@ -18,12 +20,20 @@ impl Contract {
             self.owner = owner;
         }
 
+        if let Some(bnear_contract) = bnear_contract {
+            self.bnear_contract = bnear_contract;
+        }
+
+        if let Some(stable_coin_contract) = stable_coin_contract {
+            self.stable_coin_contract = stable_coin_contract;
+        }
+
         if let Some(requester_contract) = requester_contract {
             self.requester_contract = requester_contract;
         }
 
-        if let Some(payment_token) = payment_token {
-            self.payment_token = payment_token;
+        if let Some(oracle_payment_token) = oracle_payment_token {
+            self.oracle_payment_token = oracle_payment_token;
         }
 
         if let Some(safe_ratio) = safe_ratio {
