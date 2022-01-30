@@ -1,6 +1,6 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Serialize, Deserialize};
-use near_sdk::json_types::U128;
+use near_sdk::json_types::{ValidAccountId, U128};
 use near_sdk::collections::{LookupMap};
 use near_sdk::{env, near_bindgen, AccountId, Balance, PanicOnDefault};
 use math::{D128};
@@ -22,9 +22,8 @@ pub struct Bid {
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[serde(crate = "near_sdk::serde")]
 pub struct PriceResponse {
-    pub rate: D128,
-    pub last_updated_base: u64,
-    pub last_updated_quote: u64,
+    pub price: D128,
+    pub last_updated_at: u64,
 }
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone, Debug, PartialEq)]
@@ -40,13 +39,14 @@ pub struct TimeConstraints {
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
 pub struct Contract {
     owner: AccountId,
-    oracle_contract: AccountId,
+    requester_contract: AccountId,
+    payment_token: AccountId,
     safe_ratio: D128,
     bid_fee: D128,
     max_premium_rate: D128,
     liquidation_threshold: Balance,
-    price_timeframe: u64,
     bids: LookupMap<AccountId, Bid>,
+    last_price_response: PriceResponse,
 }
 
 #[near_bindgen]
@@ -54,23 +54,29 @@ impl Contract {
     #[init]
     pub fn new(
         owner: AccountId,
-        oracle_contract: AccountId,
+        requester_contract: AccountId,
+        payment_token: AccountId,
         safe_ratio: D128,
         bid_fee: D128,
         max_premium_rate: D128,
         liquidation_threshold: Balance,
         price_timeframe: u64
     ) -> Self {
-        Self{
+        let instance = Self{
             owner,
-            oracle_contract,
+            requester_contract,
+            payment_token,
             safe_ratio,
             bid_fee,
             max_premium_rate,
             liquidation_threshold,
-            price_timeframe,
             bids: LookupMap::new(b"b".to_vec()),
-        }
+            last_price_response: PriceResponse{price: D128::one(), last_updated_at: env::block_timestamp()},
+        };
+        // Updates initial price
+        instance.internal_ping();
+
+        instance
     }
 
     pub fn execute_bid(
@@ -80,16 +86,11 @@ impl Contract {
         fee_address: AccountId,
         amount: U128,
     ) {
+        self.internal_ping();
         let bid: Bid = self.internal_get_bid(&liquidator);
 
-        let price: PriceResponse = self.query_price(
-            Some(TimeConstraints {
-                block_time: env::block_timestamp(),
-                valid_timeframe: self.price_timeframe,
-            }),
-        );
-
-        let collateral_value: Balance = price.rate * amount.0;
+        // collateral NEAR price in USD (multiplied by 10^24)
+        let collateral_value: Balance = self.last_price_response.price.mul_int(amount.0);
         let required_stable: Balance = (D128::one() - std::cmp::min(bid.premium_rate, self.max_premium_rate))
             * collateral_value;
         

@@ -14,4 +14,9 @@ impl Contract {
     pub(crate) fn internal_get_bid(&self, bidder: &AccountId) -> Bid {
         self.bids.get(bidder).expect("No bids with the specified information exist")
     }
+
+    /// updates price response at every function call
+    pub(crate) fn internal_ping(&mut self) {
+        self.internal_update_price_response(self.requester_contract);
+    }
 }

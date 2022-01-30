@@ -8,8 +8,9 @@ edition = "2018"
 crate-type = ["cdylib"]
 
 [dependencies]
-near-sdk = "4.0.0-pre.4"
+near-sdk = "3.1.0"
 uint = { version = "0.8.3", default-features = false }
+flux-sdk = { git = "https://github.com/fluxprotocol/flux-sdk-rs.git", rev="95df735a58f71859e284e0c499362b3bfd03bf57" }
 
 [profile.release]
 codegen-units = 1

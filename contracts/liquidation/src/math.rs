@@ -10,7 +10,7 @@ construct_uint! {
     pub struct U256(4);
 }
 
-const DECIMAL: u128 = 1_000_000_000_000;        //1e12
+pub const DECIMAL: u128 = 1_000_000_000_000;        //1e12
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Copy, Clone, Debug)]
 #[serde(crate = "near_sdk::serde")]

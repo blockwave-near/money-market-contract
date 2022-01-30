@@ -5,12 +5,12 @@ impl Contract {
     pub fn update_config(
         &mut self,
         owner: Option<AccountId>,
-        oracle_contract: Option<AccountId>,
+        requester_contract: Option<AccountId>,
+        payment_token: Option<AccountId>,
         safe_ratio: Option<D128>,
         bid_fee: Option<D128>,
         max_premium_rate: Option<D128>,
         liquidation_threshold: Option<Balance>,
-        price_timeframe: Option<u64>,
     ) {
         self.assert_owner();
 
@@ -18,8 +18,12 @@ impl Contract {
             self.owner = owner;
         }
 
-        if let Some(oracle_contract) = oracle_contract {
-            self.oracle_contract = oracle_contract;
+        if let Some(requester_contract) = requester_contract {
+            self.requester_contract = requester_contract;
+        }
+
+        if let Some(payment_token) = payment_token {
+            self.payment_token = payment_token;
         }
 
         if let Some(safe_ratio) = safe_ratio {
@@ -36,10 +40,6 @@ impl Contract {
 
         if let Some(liquidation_threshold) = liquidation_threshold {
             self.liquidation_threshold = liquidation_threshold;
-        }
-
-        if let Some(price_timeframe) = price_timeframe {
-            self.price_timeframe = price_timeframe;
         }
     }
 }
