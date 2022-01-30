@@ -30,12 +30,17 @@ pub struct PriceResponse {
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[serde(crate = "near_sdk::serde")]
-pub struct ReceiverPayload {
+pub struct BnearReceiverPayload {
     pub liquidator: AccountId,
     pub repay_address: Option<AccountId>,
     pub fee_address: Option<AccountId>
 }
 
+#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[serde(crate = "near_sdk::serde")]
+pub struct StableReceiverPayload {
+    pub premium_rate: D128,
+}
 
 
 #[near_bindgen]

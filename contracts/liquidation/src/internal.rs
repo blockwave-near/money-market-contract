@@ -11,8 +11,8 @@ impl Contract {
         );
     }
 
-    pub(crate) fn internal_get_bid(&self, bidder: &AccountId) -> Bid {
-        self.bids.get(bidder).expect("No bids with the specified information exist")
+    pub(crate) fn internal_get_bid(&self, bidder: &AccountId) -> Option<Bid> {
+        self.bids.get(bidder)
     }
 
     pub(crate) fn internal_remove_bid(&mut self, bidder: &AccountId) {
@@ -28,6 +28,19 @@ impl Contract {
         self.internal_update_price_response(self.requester_contract.clone());
     }
 
+    pub(crate) fn internal_submit_bid(&mut self, bidder: AccountId, premium_rate: D128, amount: U128) {
+        assert!(self.internal_get_bid(&bidder).is_none(), "User already has bid");
+        assert!(premium_rate < self.max_premium_rate, "Premium rate cannot exceed the max premium rate");
+
+        self.internal_store_bid(
+            &bidder,
+            Bid {
+                amount,
+                premium_rate
+            }
+        );
+    }
+
     pub(crate) fn internal_execute_bid(
         &mut self,
         liquidator: AccountId,
@@ -36,7 +49,7 @@ impl Contract {
         amount: U128,   // amount of bNEAR (decimal: 24)
     ) {
         self.internal_ping();
-        let bid: Bid = self.internal_get_bid(&liquidator);
+        let bid: Bid = self.internal_get_bid(&liquidator).expect("No bids with the specified information exist");
 
         // corresponding collateral bNEAR value in USD (decimal: 6, which is decimal of USDT)
         let collateral_value: Balance = self.last_price_response.price.mul_int(amount.0) / 1_000_000_000_000_000_000;

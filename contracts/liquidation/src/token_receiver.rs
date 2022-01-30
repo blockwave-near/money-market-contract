@@ -17,16 +17,27 @@ impl FungibleTokenReceiver for Contract {
         amount: U128,
         msg: String,
     ) -> PromiseOrValue<U128> {
-        assert_eq!(env::predecessor_account_id(), self.bnear_contract, "Only {} token can transfer_call to this", self.bnear_contract);
+        if env::predecessor_account_id() == self.bnear_contract {
+            let payload: BnearReceiverPayload =
+                serde_json::from_str(&msg).expect("Failed to parse the payload, invalid `msg` format");
 
-        let payload: ReceiverPayload =
-            serde_json::from_str(&msg).expect("Failed to parse the payload, invalid `msg` format");
+            let repay_address: AccountId = payload.repay_address.unwrap_or(env::predecessor_account_id());
+            let fee_address: AccountId = payload.fee_address.unwrap_or(env::predecessor_account_id());
+            
+            self.internal_execute_bid(payload.liquidator, repay_address, fee_address, amount);
 
-        let repay_address: AccountId = payload.repay_address.unwrap_or(env::predecessor_account_id());
-        let fee_address: AccountId = payload.fee_address.unwrap_or(env::predecessor_account_id());
-        
-        self.internal_execute_bid(payload.liquidator, repay_address, fee_address, amount);
+            return PromiseOrValue::Value(U128(0));
+        } else if env::predecessor_account_id() == self.stable_coin_contract {
+            let payload: StableReceiverPayload =
+                serde_json::from_str(&msg).expect("Failed to parse the payload, invalid `msg` format");
 
-        PromiseOrValue::Value(U128(0))
+            self.internal_submit_bid(sender_id, payload.premium_rate, amount);
+
+            return PromiseOrValue::Value(U128(0));
+        } else {
+            env::log(b"Only whitelisted tokens can transfer_call to this");
+
+            return PromiseOrValue::Value(amount);
+        }
     }
 }
