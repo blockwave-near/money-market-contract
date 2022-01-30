@@ -56,6 +56,14 @@ impl D128 {
         assert!(exp >= -12);
         Self::new(num * u128::pow(10, (Self::get_decimal() as i32 + exp) as u32))
     }
+
+    pub fn ratio(numer: u128, denom: u128) -> Self {
+        D128::new(numer * DECIMAL) / D128::new(denom * DECIMAL)
+    }
+
+    pub fn mul_int(self, other: u128) -> u128 {
+        ((U256::from(self.num.0) * U256::from(other)) / U256::from(DECIMAL)).as_u128()
+    }
 }
 
 impl Add<D128> for D128 {
@@ -78,6 +86,16 @@ impl Add<u128> for D128 {
     }
 }
 
+impl Add<D128> for u128 {
+    type Output = D128;
+    #[inline]
+    fn add(self, other: D128) -> D128 {
+        let num: u128 = self * DECIMAL + other.num.0;
+
+        D128::new(num)
+    }
+}
+
 impl Sub<D128> for D128 {
     type Output = Self;
     #[inline]
@@ -92,9 +110,19 @@ impl Sub<u128> for D128 {
     type Output = Self;
     #[inline]
     fn sub(self, other: u128) -> Self {
-        let num: u128 = other * DECIMAL - self.num.0;
+        let num: u128 = self.num.0 - other * DECIMAL;
         
         Self::new(num)
+    }
+}
+
+impl Sub<D128> for u128 {
+    type Output = D128;
+    #[inline]
+    fn sub(self, other: D128) -> D128 {
+        let num: u128 = self * DECIMAL - other.num.0;
+
+        D128::new(num)
     }
 }
 
@@ -109,13 +137,24 @@ impl Mul<D128> for D128 {
 }
 
 impl Mul<u128> for D128 {
-    type Output = u128;
+    type Output = Self;
     /// NOTE: u128 value should be big integer or there may be round error.
-    /// Returns u128 value
     #[inline]
-    fn mul(self, other: u128) -> u128 {
-        (U256::from(other) * U256::from(self.num.0) 
-            / U256::from(DECIMAL)).as_u128()
+    fn mul(self, other: u128) -> Self {
+        let num: u128 = ((U256::from(self.num.0) * U256::from(other)) / U256::from(DECIMAL)).as_u128();
+
+        Self::new(num * DECIMAL)
+    }
+}
+
+impl Mul<D128> for u128 {
+    type Output = D128;
+    /// NOTE: u128 value should be big integer or there may be round error.
+    #[inline]
+    fn mul(self, other: D128) -> D128 {
+        let num: u128 = ((U256::from(self) * U256::from(other.num.0)) / U256::from(DECIMAL)).as_u128();
+
+        D128::new(num * DECIMAL)
     }
 }
 
@@ -126,6 +165,28 @@ impl Div<D128> for D128 {
         let num: u128 = (U256::from(self.num.0) * U256::from(DECIMAL) / U256::from(other.num.0)).as_u128();
 
         Self::new(num)
+    }
+}
+
+impl Div<u128> for D128 {
+    type Output = Self;
+    #[inline]
+    fn div(self, other: u128) -> Self {
+        let other: D128 = Self::new(other * DECIMAL);
+        let num: u128 = (U256::from(self.num.0) * U256::from(DECIMAL) / U256::from(other.num.0)).as_u128();
+
+        Self::new(num)
+    }
+}
+
+impl Div<D128> for u128 {
+    type Output = D128;
+    #[inline]
+    fn div(self, other: D128) -> D128 {
+        let self_value: D128 = D128::new(self * DECIMAL);
+        let num: u128 = (U256::from(self_value.num.0) * U256::from(DECIMAL) / U256::from(other.num.0)).as_u128();
+
+        D128::new(num)
     }
 }
 
