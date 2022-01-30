@@ -10,7 +10,7 @@ construct_uint! {
     pub struct U256(4);
 }
 
-pub const DECIMAL: u128 = 1_000_000_000_000;        //1e12
+pub const DECIMAL: u128 = 100_000_000;        //1e8
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Copy, Clone, Debug)]
 #[serde(crate = "near_sdk::serde")]
@@ -22,7 +22,7 @@ pub struct D128 {
 impl Default for D128 {
     /// set default value to 1.0
     fn default() -> Self {
-        Self{num: U128::from(DECIMAL), decimal: 12}
+        Self{num: U128::from(DECIMAL), decimal: 8}
     }
 }
 
