@@ -21,8 +21,8 @@ impl FungibleTokenReceiver for Contract {
             let payload: BnearReceiverPayload =
                 serde_json::from_str(&msg).expect("Failed to parse the payload, invalid `msg` format");
 
-            let repay_address: AccountId = payload.repay_address.unwrap_or(env::predecessor_account_id());
-            let fee_address: AccountId = payload.fee_address.unwrap_or(env::predecessor_account_id());
+            let repay_address: AccountId = payload.repay_address.unwrap_or(sender_id.clone());
+            let fee_address: AccountId = payload.fee_address.unwrap_or(sender_id.clone());
             
             self.internal_execute_bid(payload.liquidator, repay_address, fee_address, amount);
 

@@ -2,9 +2,10 @@ use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Serialize, Deserialize};
 use near_sdk::json_types::{ValidAccountId, U128};
 use near_sdk::collections::{LookupMap};
-use near_sdk::{env, near_bindgen, serde_json, AccountId, Balance, PanicOnDefault, PromiseOrValue};
-use math::{D128};
-use utils::{fungible_token_transfer};
+use near_sdk::{env, near_bindgen, serde_json, assert_one_yocto, AccountId, Balance, PanicOnDefault, PromiseOrValue, Promise};
+use math::{D128, DECIMAL};
+use utils::{fungible_token_transfer, fungible_token_transfer_call, requester, ext_self};
+use std::convert::TryInto;
 
 mod internal;
 mod math;
@@ -87,12 +88,17 @@ impl Contract {
             last_price_response: PriceResponse{price: D128::one(), last_updated_at: env::block_timestamp()},
         };
         // Updates initial price
-        instance.internal_ping();
+        instance.internal_update_price_response();
 
         instance
     }
 
+    #[payable]
     pub fn retract_bid(&mut self, amount: Option<U128>) {
+        assert_one_yocto();
+        
+        self.internal_update_price_response();
+        
         let bidder: AccountId = env::predecessor_account_id();
 
         let bid: Bid = self.internal_get_bid(&bidder).expect("No bids with the specified information exist");

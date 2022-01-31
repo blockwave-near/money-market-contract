@@ -2,9 +2,7 @@ use crate::*;
 
 use flux_sdk::consts::{DR_NEW_GAS, GAS_BASE_TRANSFER};
 use flux_sdk::{DataRequestDetails, RequestStatus, Outcome, AnswerType};
-use near_sdk::{ext_contract, AccountId, Promise};
-use std::convert::TryInto;
-use crate::math::{DECIMAL};
+use near_sdk::{ext_contract, AccountId};
 
 #[ext_contract(fungible_token)]
 pub trait FungibleToken {
@@ -70,34 +68,6 @@ pub fn fungible_token_transfer_call(
 
 #[near_bindgen]
 impl Contract {
-    pub(crate) fn internal_update_price_response(
-        &mut self,
-        requester_account_id: AccountId,
-    ) -> Promise {
-        requester::get_data_request(
-            env::current_account_id().try_into().unwrap(),
-            // Near params
-            &requester_account_id,
-            0,
-            3_000_000_000_000,
-        ).then(ext_self::callback_get_price_response(
-            // Near params
-            &env::current_account_id(),
-            0,
-            30_000_000_000_000,
-        ))
-    }
-
-    pub(crate) fn internal_create_new_price_request(&self) {
-        fungible_token_transfer_call(
-            self.oracle_payment_token.clone(), 
-            self.requester_contract.clone(), 
-            1_000_000_000_000_000_000_000_000, 
-            // query NEAR price
-            format!("{{\"sources\": [{{ \"end_point\": \"https://api.coingecko.com/api/v3/simple/price?ids=tether%2Cnear&vs_currencies=usd\", \"source_path\":\"near.usd\"}}], \"tags\":[\"pricing\",\"near\"],  \"challenge_period\":\"120000000000\", \"settlement_time\":\"1\", \"data_type\":{{\"Number\":\"{}\"}}, \"creator\":\"{}\"}}", DECIMAL, env::current_account_id())
-        );
-    }
-
     #[private]
     pub fn callback_get_price_response(&mut self, #[callback] result: Option<DataRequestDetails>) {
         let result: DataRequestDetails = result.expect("ERR: There is no response.");
