@@ -11,34 +11,6 @@ pub struct DistributionModelConfig {
 
 #[near_bindgen]
 impl Contract {
-  #[payable]
-  pub fn update_distribution_model_config(
-    &mut self,
-    emission_cap: Option<D128>,
-    emission_floor: Option<D128>,
-    increment_multiplier: Option<D128>,
-    decrement_multiplier: Option<D128>,
-  ) {
-    assert_one_yocto();
-    self.assert_owner();
-
-    if let Some(emission_cap) = emission_cap {
-      self.distribution_model_config.emission_cap = emission_cap;
-    }
-
-    if let Some(emission_floor) = emission_floor {
-      self.distribution_model_config.emission_floor = emission_floor;
-    }
-
-    if let Some(increment_multiplier) = increment_multiplier {
-      self.distribution_model_config.increment_multiplier = increment_multiplier;
-    }
-
-    if let Some(decrement_multiplier) = decrement_multiplier {
-      self.distribution_model_config.decrement_multiplier = decrement_multiplier;
-    }
-  }
-
   pub fn get_emission_rate(
     &self,
     deposit_rate: D128,

@@ -38,7 +38,7 @@ impl Contract {
   }
 
   pub fn assert_redeem_amount(&self, current_balance: Balance, redeem_amount: D128) {
-    if redeem_amount + self.state.total_reserves > D128::new(current_balance * 10 ^ 8) {
+    if redeem_amount + self.state.total_reserves > D128::new(current_balance * 100_000_000) {
       env::panic("".as_bytes());
     }
   }

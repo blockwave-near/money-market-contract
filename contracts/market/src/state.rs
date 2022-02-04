@@ -3,12 +3,15 @@ use crate::*;
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Debug, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct Config {
+  pub owner_id: AccountId,
   pub stable_coin_contract: AccountId,
   pub max_borrow_factor: D128,
   pub overseer_contract: AccountId,
 }
 
-#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone, Copy)]
+#[derive(
+  BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone, Copy, Debug, PartialEq,
+)]
 #[serde(crate = "near_sdk::serde")]
 pub struct State {
   pub anc_emission_rate: D128,

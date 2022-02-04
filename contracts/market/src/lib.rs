@@ -1,6 +1,6 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::LookupMap;
-use near_sdk::json_types::U128;
+use near_sdk::json_types::{ValidAccountId, U128};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{
     assert_one_yocto, env, ext_contract, near_bindgen, AccountId, Balance, BlockHeight,
@@ -26,7 +26,7 @@ mod math;
 mod owner;
 mod state;
 #[cfg(test)]
-mod tests;
+mod testing;
 mod utils;
 mod view;
 
@@ -47,7 +47,6 @@ pub(crate) enum StorageKey {
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
 pub struct Contract {
-    owner_id: AccountId,
     config: Config,
     state: State,
     collection: Collection,
@@ -61,6 +60,8 @@ impl Contract {
     pub fn new(
         owner_id: AccountId,
         max_borrow_factor: D128,
+        stable_coin_contract: AccountId,
+        overseer_contract: AccountId,
 
         anc_emission_rate: D128,
 
@@ -77,19 +78,12 @@ impl Contract {
             env::is_valid_account_id(owner_id.as_bytes()),
             "The owner account ID is invalid"
         );
-        // max_borrow_factor.assert_valid();
-        // anc_emission_rate.assert_valid();
-        // base_rate.assert_valid();
-        // interest_multiplier.assert_valid();
-        // emission_cap.assert_valid();
-        // emission_floor.assert_valid();
-        // increment_multiplier.assert_valid();
-        // decrement_multiplier.assert_valid();
 
         let config = Config {
+            owner_id,
             max_borrow_factor,
-            stable_coin_contract: AccountId::from(""),
-            overseer_contract: AccountId::from(""),
+            stable_coin_contract,
+            overseer_contract,
         };
 
         let state = State {
@@ -121,7 +115,6 @@ impl Contract {
         };
 
         Self {
-            owner_id,
             config,
             state,
             collection,

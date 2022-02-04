@@ -158,7 +158,7 @@ impl Contract {
     liability.loan_amount = (U256::from(liability.loan_amount)
       * U256::from(self.state.global_interest_index.as_u128())
       / U256::from(liability.interest_index.as_u128()))
-    .as_u128();
+    .as_u128(); // TODO: is it right?
     liability.interest_index = self.state.global_interest_index;
   }
 

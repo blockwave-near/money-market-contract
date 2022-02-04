@@ -10,6 +10,11 @@ impl Contract {
     self.state
   }
 
+  // TODO Is is right?
+  pub fn get_balance(&self) -> Balance {
+    env::account_balance()
+  }
+
   // TODO: Is it view method? Because it should use ext_contract method...
   pub fn get_epoch_state(
     &mut self,
