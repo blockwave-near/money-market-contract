@@ -28,6 +28,7 @@ pub struct State {
 #[derive(BorshDeserialize, BorshSerialize)]
 pub struct Collection {
   pub white_list_elem_map: LookupMap<AccountId, WhitelistElem>,
+  pub collateral_map: LookupMap<AccountId, Tokens>,
 }
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone, Debug, PartialEq)]
@@ -36,7 +37,7 @@ pub struct WhitelistElem {
   pub name: String,
   pub symbol: String,
   pub max_ltv: D128,
-  pub custody_contract: D128,
+  pub custody_contract: AccountId,
 }
 
 #[near_bindgen]
@@ -47,6 +48,21 @@ impl Contract {
 
   pub fn get_white_list_elem_map(&self, key: &String) -> WhitelistElem {
     match self.collection.white_list_elem_map.get(&key) {
+      Some(value) => {
+        let log_message = format!("Value from LookupMap is {:?}", value.clone());
+        env::log(log_message.as_bytes());
+        value
+      }
+      None => env::panic("".as_bytes()),
+    }
+  }
+
+  pub fn add_collateral_map(&mut self, key: &String, value: &Tokens) {
+    self.collection.collateral_map.insert(&key, value);
+  }
+
+  pub fn get_collateral_map(&self, key: &String) -> Tokens {
+    match self.collection.collateral_map.get(&key) {
       Some(value) => {
         let log_message = format!("Value from LookupMap is {:?}", value.clone());
         env::log(log_message.as_bytes());

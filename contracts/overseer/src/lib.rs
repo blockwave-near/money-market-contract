@@ -10,15 +10,18 @@ use near_sdk::{
 use uint::construct_uint;
 
 use crate::math::D128;
-use crate::state::{Collection, Config, State};
-use crate::utils::{ext_self, ext_stable_coin};
+use crate::state::{Collection, Config, State, WhitelistElem};
+use crate::tokens::{Token, Tokens, TokensMath};
+use crate::utils::{ext_market, ext_self, ext_stable_coin};
 
+mod collateral;
 mod internal;
 mod math;
 mod owner;
 mod state;
 #[cfg(test)]
-mod tests;
+mod testing;
+mod tokens;
 mod utils;
 mod view;
 
@@ -34,6 +37,7 @@ construct_uint! {
 #[derive(BorshStorageKey, BorshSerialize)]
 pub(crate) enum StorageKey {
     WhitelistElem,
+    Collateral,
 }
 
 #[near_bindgen]
@@ -66,6 +70,7 @@ impl Contract {
 
         let collection = Collection {
             white_list_elem_map: LookupMap::new(StorageKey::WhitelistElem),
+            collateral_map: LookupMap::new(StorageKey::Collateral),
         };
 
         Self {
@@ -74,6 +79,72 @@ impl Contract {
             state,
             collection,
         }
+    }
+
+    #[payable]
+    pub fn update_config(
+        &mut self,
+        oracle_contrract: Option<AccountId>,
+        market_contract: Option<AccountId>,
+        liquidation_contract: Option<AccountId>,
+        collector_contract: Option<AccountId>,
+    ) {
+        self.assert_owner();
+        assert_one_yocto();
+        if let Some(oracle_contrract) = oracle_contrract {
+            self.config.oracle_contrract = oracle_contrract;
+        }
+        if let Some(market_contract) = market_contract {
+            self.config.market_contract = market_contract;
+        }
+        if let Some(liquidation_contract) = liquidation_contract {
+            self.config.liquidation_contract = liquidation_contract;
+        }
+        if let Some(collector_contract) = collector_contract {
+            self.config.collector_contract = collector_contract;
+        }
+    }
+
+    #[payable]
+    pub fn register_whitelist(
+        &mut self,
+        name: String,
+        symbol: String,
+        collateral_token: AccountId,
+        custody_contract: AccountId,
+        max_ltv: D128,
+    ) {
+        assert_one_yocto();
+        self.add_white_list_elem_map(
+            &collateral_token,
+            &WhitelistElem {
+                name: name.to_string(),
+                symbol: symbol.to_string(),
+                custody_contract,
+                max_ltv,
+            },
+        );
+    }
+
+    #[payable]
+    pub fn update_whitelist(
+        &mut self,
+        collateral_token: AccountId,
+        custody_contract: Option<AccountId>,
+        max_ltv: Option<D128>,
+    ) {
+        assert_one_yocto();
+        let mut white_list_elem: WhitelistElem = self.get_white_list_elem_map(&collateral_token);
+
+        if let Some(custody_contract) = custody_contract {
+            white_list_elem.custody_contract = custody_contract;
+        }
+
+        if let Some(max_ltv) = max_ltv {
+            white_list_elem.max_ltv = max_ltv;
+        }
+
+        self.add_white_list_elem_map(&collateral_token, &white_list_elem);
     }
 
     pub fn execute_epoch_operations(

@@ -1,7 +1,7 @@
 use near_sdk::test_utils::{accounts, VMContextBuilder};
 use near_sdk::{testing_env, MockedBlockchain};
 
-use super::*;
+use crate::*;
 
 fn setup_contract() -> (VMContextBuilder, Contract) {
   let mut context = VMContextBuilder::new();
