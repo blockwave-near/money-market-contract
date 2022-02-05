@@ -14,7 +14,6 @@ pub fn setup_contract() -> (VMContextBuilder, Contract) {
     D128::zero(),
     AccountId::from("stable_coin"),
     AccountId::from("overseer"),
-    D128::zero(),
     D128::new_exp(1, -1),
     D128::new_exp(1, -1),
     D128::new_exp(100, 0),

@@ -56,7 +56,7 @@ impl Contract {
       repay_amount = liability.loan_amount;
       liability.loan_amount = 0;
 
-      ext_stable_coin::ft_transfer(
+      fungible_token::ft_transfer(
         borrower.clone(),
         U128::from(amount - repay_amount),
         None,
@@ -155,10 +155,9 @@ impl Contract {
   }
 
   pub fn compute_borrower_interest(&self, liability: &mut BorrowerInfo) {
-    liability.loan_amount = (U256::from(liability.loan_amount)
-      * U256::from(self.state.global_interest_index.as_u128())
-      / U256::from(liability.interest_index.as_u128()))
-    .as_u128(); // TODO: is it right?
+    liability.loan_amount = (liability.loan_amount * self.state.global_interest_index
+      / liability.interest_index)
+      .as_u128();
     liability.interest_index = self.state.global_interest_index;
   }
 

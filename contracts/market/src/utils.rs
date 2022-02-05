@@ -21,8 +21,8 @@ use crate::*;
 //   ) -> d128;
 // }
 
-#[ext_contract(ext_stable_coin)]
-pub trait ExtStableCoinContract {
+#[ext_contract(fungible_token)]
+pub trait FungibleToken {
   fn ft_total_supply(&self) -> PromiseOrValue<U128>;
 
   fn ft_balance_of(&self, account_id: AccountId) -> PromiseOrValue<U128>;
@@ -33,6 +33,8 @@ pub trait ExtStableCoinContract {
 #[ext_contract(ext_overseer)]
 pub trait OverseerContract {
   fn get_borrow_limit(&self, borrower: AccountId) -> PromiseOrValue<(AccountId, U128)>;
+
+  fn get_target_deposit_rate(&self) -> PromiseOrValue<D128>;
 }
 
 #[ext_contract(ext_self)]
@@ -211,6 +213,7 @@ impl Contract {
           self.state.prev_stable_coin_total_supply - burn_amount;
 
         // TODO response for redeem success
+        let sender = env::predecessor_account_id();
       }
     }
   }

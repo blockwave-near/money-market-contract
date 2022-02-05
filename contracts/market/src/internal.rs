@@ -19,12 +19,12 @@ impl Contract {
   }
 
   pub fn ft_info(&self) -> Promise {
-    ext_stable_coin::ft_total_supply(
+    fungible_token::ft_total_supply(
       &self.config.stable_coin_contract,
       NO_DEPOSIT,
       SINGLE_CALL_GAS,
     )
-    .and(ext_stable_coin::ft_balance_of(
+    .and(fungible_token::ft_balance_of(
       env::current_account_id(),
       &self.config.stable_coin_contract,
       NO_DEPOSIT,

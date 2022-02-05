@@ -14,12 +14,13 @@ use crate::distribution_model::DistributionModelConfig;
 use crate::interest_model::InterestModelConfig;
 use crate::math::D128;
 use crate::state::{BorrowerInfo, Collection, Config, State};
-use crate::utils::{ext_overseer, ext_self, ext_stable_coin};
+use crate::utils::{ext_overseer, ext_self, fungible_token};
 
 mod borrow;
 mod deposit;
 mod distribution_model;
 mod fraction;
+mod fungible_token_handler;
 mod interest_model;
 mod internal;
 mod math;
@@ -63,8 +64,6 @@ impl Contract {
         stable_coin_contract: AccountId,
         overseer_contract: AccountId,
 
-        anc_emission_rate: D128,
-
         base_rate: D128,
         interest_multiplier: D128,
 
@@ -87,7 +86,7 @@ impl Contract {
         };
 
         let state = State {
-            anc_emission_rate,
+            anc_emission_rate: D128::one(),
             total_liabilities: D128::zero(),
             total_reserves: D128::zero(),
             last_interest_updated: 0,
@@ -131,7 +130,7 @@ impl Contract {
         distributed_intereset: U128,
     ) {
         self.assert_overseer();
-        ext_stable_coin::ft_total_supply(
+        fungible_token::ft_total_supply(
             &self.config.stable_coin_contract,
             NO_DEPOSIT,
             SINGLE_CALL_GAS,
