@@ -1,7 +1,7 @@
 use crate::*;
 
-#[ext_contract(ext_stable_coin)]
-pub trait ExtStableCoinContract {
+#[ext_contract(fungible_token)]
+pub trait FungibleToken {
   fn ft_total_supply(&self) -> PromiseOrValue<U128>;
 
   fn ft_balance_of(&self, account_id: AccountId) -> PromiseOrValue<U128>;

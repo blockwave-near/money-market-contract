@@ -12,7 +12,7 @@ use uint::construct_uint;
 use crate::math::D128;
 use crate::state::{Collection, Config, State, WhitelistElem};
 use crate::tokens::{Token, Tokens, TokensMath};
-use crate::utils::{ext_market, ext_self, ext_stable_coin};
+use crate::utils::{ext_market, ext_self, fungible_token};
 
 mod collateral;
 mod internal;
@@ -43,7 +43,6 @@ pub(crate) enum StorageKey {
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
 pub struct Contract {
-    owner_id: AccountId,
     config: Config,
     state: State,
     collection: Collection,
@@ -52,7 +51,14 @@ pub struct Contract {
 #[near_bindgen]
 impl Contract {
     #[init]
-    pub fn new(owner_id: AccountId) -> Self {
+    pub fn new(
+        owner_id: AccountId,
+        oracle_contrract: AccountId,
+        market_contract: AccountId,
+        liquidation_contract: AccountId,
+        collector_contract: AccountId,
+        target_deposit_rate: D128,
+    ) -> Self {
         assert!(!env::state_exists(), "The contract is already initialized");
         assert!(
             env::is_valid_account_id(owner_id.as_bytes()),
@@ -60,10 +66,12 @@ impl Contract {
         );
 
         let config = Config {
-            oracle_contrract: AccountId::from(""),
-            market_contract: AccountId::from(""),
-            liquidation_contract: AccountId::from(""),
-            collector_contract: AccountId::from(""),
+            owner_id,
+            oracle_contrract,
+            market_contract,
+            liquidation_contract,
+            collector_contract,
+            target_deposit_rate,
         };
 
         let state = State {};
@@ -74,34 +82,9 @@ impl Contract {
         };
 
         Self {
-            owner_id,
             config,
             state,
             collection,
-        }
-    }
-
-    #[payable]
-    pub fn update_config(
-        &mut self,
-        oracle_contrract: Option<AccountId>,
-        market_contract: Option<AccountId>,
-        liquidation_contract: Option<AccountId>,
-        collector_contract: Option<AccountId>,
-    ) {
-        self.assert_owner();
-        assert_one_yocto();
-        if let Some(oracle_contrract) = oracle_contrract {
-            self.config.oracle_contrract = oracle_contrract;
-        }
-        if let Some(market_contract) = market_contract {
-            self.config.market_contract = market_contract;
-        }
-        if let Some(liquidation_contract) = liquidation_contract {
-            self.config.liquidation_contract = liquidation_contract;
-        }
-        if let Some(collector_contract) = collector_contract {
-            self.config.collector_contract = collector_contract;
         }
     }
 

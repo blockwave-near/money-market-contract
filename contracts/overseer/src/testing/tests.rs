@@ -9,6 +9,13 @@ fn setup_contract() -> (VMContextBuilder, Contract) {
     .predecessor_account_id(accounts(0))
     .attached_deposit(1)
     .build());
-  let contract = Contract::new(accounts(0).into());
+  let contract = Contract::new(
+    AccountId::from("owner"),
+    AccountId::from("oracle"),
+    AccountId::from("market"),
+    AccountId::from("liquidation"),
+    AccountId::from("collector"),
+    D128::one(),
+  );
   (context, contract)
 }
