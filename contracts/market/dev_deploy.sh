@@ -1,6 +1,38 @@
 #!/bin/bash
 ./build.sh
 near dev-deploy \
-    --wasmFile res/bnear_token.wasm \
+    --wasmFile res/market.wasm \
     --initFunction new \
-    --initArgs '{"staking_pool": "dev-1642678330804-87084875037482"}'
+    --initArgs '{
+        "owner_id": "blockwave.testnet",
+        "max_borrow_factor": {
+            "num": 100000000,
+            "decimal": 100000000,
+        },
+        "stable_coin_contract": "stable_coin.testnet",
+        "overseer_contract": "overseer.synchro.testnet",
+        "base_rate": {
+            "num": 10000000,
+            "decimal": 100000000,
+        },
+        "interest_multiplier": {
+            "num": 10000000,
+            "decimal": 100000000,
+        },
+        "emission_cap": {
+            "num": 10000000000,
+            "decimal": 100000000,
+        },
+        "emission_floor": {
+            "num": 1000000000,
+            "decimal": 100000000,
+        },
+        "increment_multiplier": {
+            "num": 110000000,
+            "decimal": 100000000,
+        },
+        "decrement_multiplier": {
+            "num": 90000000,
+            "decimal": 100000000,
+        },
+    }'
