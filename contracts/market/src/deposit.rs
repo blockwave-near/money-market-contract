@@ -44,7 +44,7 @@ impl Contract {
   }
 
   pub fn compute_exchange_rate(&self, deposit_amount: Option<Balance>) -> Promise {
-    ext_stable_coin::ft_total_supply(
+    fungible_token::ft_total_supply(
       &self.config.stable_coin_contract,
       NO_DEPOSIT,
       SINGLE_CALL_GAS,

@@ -11,11 +11,17 @@ fn setup_contract() -> (VMContextBuilder, Contract) {
     .build());
   let contract = Contract::new(
     AccountId::from("owner"),
-    AccountId::from("oracle"),
+    AccountId::from("overseer"),
+    AccountId::from("collateral"),
     AccountId::from("market"),
+    AccountId::from("reward"),
     AccountId::from("liquidation"),
-    AccountId::from("collector"),
-    D128::one(),
+    AccountId::from("stable_coin"),
+    BAssetInfo {
+      name: String::from("name"),
+      symbol: String::from("symbol"),
+      decimals: 8,
+    },
   );
   (context, contract)
 }

@@ -29,6 +29,20 @@ impl Contract {
       if block_height < self.state.last_interest_updated {
         env::panic("block_height must bigger than last_interest_updated".as_bytes());
       }
+
+      let borrow_rate = self.get_borrow_rate(
+        balance,
+        self.state.total_liabilities,
+        self.state.total_reserves,
+      );
+
+      // ext_overseer::get_target_deposit_rate(
+      //   &self.config.overseer_contract,
+      //   NO_DEPOSIT,
+      //   SINGLE_CALL_GAS,
+      // ).then(
+      //   // ext_self::callback_get_epoch_state
+      // )
     }
   }
 

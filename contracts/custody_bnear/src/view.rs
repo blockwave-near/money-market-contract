@@ -10,7 +10,7 @@ impl Contract {
     self.state
   }
 
-  pub fn get_target_deposit_rate(&self) -> D128 {
-    self.config.target_deposit_rate
+  pub fn get_borrower(&self, borrower: AccountId) -> BorrowerInfo {
+    self.get_borrower_info_map(&borrower)
   }
 }

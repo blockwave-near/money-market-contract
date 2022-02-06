@@ -3,13 +3,14 @@ use crate::*;
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Debug, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct Config {
+  pub owner_id: AccountId,
   pub oracle_contrract: AccountId,
   pub market_contract: AccountId,
   pub liquidation_contract: AccountId,
   pub collector_contract: AccountId,
   // pub epoch_period: BlockHeight,
   // pub threshold_deposit_rate: D128,
-  // pub target_deposit_rate: D128,
+  pub target_deposit_rate: D128,
   // pub buffer_distribution_factor: D128,
   // pub anc_purchase_factor: D128,
   // pub price_timeframe: BlockHeight,

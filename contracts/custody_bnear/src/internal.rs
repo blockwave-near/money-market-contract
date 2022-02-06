@@ -17,18 +17,4 @@ impl Contract {
       "Can only be called by the overseer"
     );
   }
-
-  pub fn ft_info(&self) -> Promise {
-    fungible_token::ft_total_supply(
-      &self.config.stable_coin_contract,
-      NO_DEPOSIT,
-      SINGLE_CALL_GAS,
-    )
-    .and(fungible_token::ft_balance_of(
-      env::current_account_id(),
-      &self.config.stable_coin_contract,
-      NO_DEPOSIT,
-      SINGLE_CALL_GAS,
-    ))
-  }
 }
