@@ -5,22 +5,14 @@ impl Contract {
     pub(crate) fn assert_owner(&self) {
         assert_eq!(
             env::predecessor_account_id(),
-            self.owner,
+            self.config.owner,
             "This method can only be called by {}",
-            self.owner
+            self.config.owner
         );
     }
 
-    pub(crate) fn internal_get_bid(&self, bidder: &AccountId) -> Option<Bid> {
-        self.bids.get(bidder)
-    }
-
-    pub(crate) fn internal_remove_bid(&mut self, bidder: &AccountId) {
-        self.bids.remove(bidder);
-    }
-
-    pub(crate) fn internal_store_bid(&mut self, bidder: &AccountId, bid: Bid) {
-        self.bids.insert(bidder, &bid);
+    pub(crate) fn assert_fees(&self, fees: D128) {
+        assert!(fees > D128::one(), "The sum of bid_fee and liquidator_fee can not be greater than one");
     }
 
     /// updates price response at every function call
@@ -30,7 +22,7 @@ impl Contract {
         requester::get_data_request(
             env::current_account_id().try_into().unwrap(),
             // Near params
-            &self.requester_contract,
+            &self.config.requester_contract,
             0,
             3_000_000_000_000,
         ).then(ext_self::callback_get_price_response(
@@ -43,8 +35,8 @@ impl Contract {
 
     pub(crate) fn internal_create_new_price_request(&self) {
         fungible_token_transfer_call(
-            self.oracle_payment_token.clone(), 
-            self.requester_contract.clone(), 
+            self.config.oracle_payment_token.clone(), 
+            self.config.requester_contract.clone(), 
             1_000_000_000_000_000_000_000_000, 
             // query NEAR price
             format!("{{\"sources\": [{{ \"end_point\": \"https://api.coingecko.com/api/v3/simple/price?ids=tether%2Cnear&vs_currencies=usd\", \"source_path\":\"near.usd\"}}], \"tags\":[\"pricing\",\"near\"],  \"challenge_period\":\"120000000000\", \"settlement_time\":\"1\", \"data_type\":{{\"Number\":\"{}\"}}, \"creator\":\"{}\"}}", DECIMAL, env::current_account_id())
@@ -52,10 +44,14 @@ impl Contract {
     }
 
     /// callback on transfer stable coin
-    pub(crate) fn internal_submit_bid(&mut self, bidder: AccountId, premium_rate: D128, amount: U128) {
+    pub(crate) fn internal_submit_bid(&mut self, bidder: AccountId, premium_slot: u8, amount: U128) {
         self.internal_update_price_response();
-        assert!(self.internal_get_bid(&bidder).is_none(), "User already has bid");
-        assert!(premium_rate < self.max_premium_rate, "Premium rate cannot exceed the max premium rate");
+        assert!(self.internal_read_bid(&bidder).is_none(), "User already has bid");
+        assert!(premium_rate < self.config.max_premium_rate, "Premium rate cannot exceed the max premium rate");
+
+        // read or create bid_pool, make sure slot is valid
+        let mut bid_pool: BidPool =
+            self.internal_read_or_create_bid_pool(&collateral_info, premium_slot);
 
         self.internal_store_bid(
             &bidder,
@@ -101,15 +97,15 @@ impl Contract {
         }
 
         // decimal: 6
-        let bid_fee: Balance = self.bid_fee.mul_int(required_stable);
+        let bid_fee: Balance = self.config.bid_fee.mul_int(required_stable);
         // decimal: 6
         let repay_amount: Balance = required_stable - bid_fee;
 
-        fungible_token_transfer(self.bnear_contract.clone(), liquidator, amount.0)
-            .and(fungible_token_transfer(self.stable_coin_contract.clone(), repay_address, repay_amount));
+        fungible_token_transfer(self.config.bnear_contract.clone(), liquidator, amount.0)
+            .and(fungible_token_transfer(self.config.stable_coin_contract.clone(), repay_address, repay_amount));
         
         if bid_fee != 0 {
-            fungible_token_transfer(self.stable_coin_contract.clone(), fee_address, bid_fee);
+            fungible_token_transfer(self.config.stable_coin_contract.clone(), fee_address, bid_fee);
         }
     }
 }

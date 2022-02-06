@@ -4,52 +4,69 @@ use crate::*;
 impl Contract {
     pub fn update_config(
         &mut self,
-        owner: Option<AccountId>,
-        bnear_contract: Option<AccountId>,
-        stable_coin_contract: Option<AccountId>,
-        requester_contract: Option<AccountId>,
-        oracle_payment_token: Option<AccountId>,
+        owner: Option<ValidAccountId>,
+        bnear_contract: Option<ValidAccountId>,
+        stable_coin_contract: Option<ValidAccountId>,
+        requester_contract: Option<ValidAccountId>,
+        oracle_payment_token: Option<ValidAccountId>,
+        overseer_contract: Option<ValidAccountId>,
         safe_ratio: Option<D128>,
         bid_fee: Option<D128>,
-        max_premium_rate: Option<D128>,
+        liquidator_fee: Option<D128>,
         liquidation_threshold: Option<Balance>,
+        waiting_period: Option<U64>,
+        collateral_info: Option<CollateralInfo>,
     ) {
         self.assert_owner();
 
         if let Some(owner) = owner {
-            self.owner = owner;
+            self.config.owner = owner.into();
         }
 
         if let Some(bnear_contract) = bnear_contract {
-            self.bnear_contract = bnear_contract;
+            self.config.bnear_contract = bnear_contract.into();
         }
 
         if let Some(stable_coin_contract) = stable_coin_contract {
-            self.stable_coin_contract = stable_coin_contract;
+            self.config.stable_coin_contract = stable_coin_contract.into();
         }
 
         if let Some(requester_contract) = requester_contract {
-            self.requester_contract = requester_contract;
+            self.config.requester_contract = requester_contract.into();
         }
 
         if let Some(oracle_payment_token) = oracle_payment_token {
-            self.oracle_payment_token = oracle_payment_token;
+            self.config.oracle_payment_token = oracle_payment_token.into();
+        }
+
+        if let Some(overseer_contract) = overseer_contract {
+            self.config.overseer_contract = overseer_contract.into();
         }
 
         if let Some(safe_ratio) = safe_ratio {
-            self.safe_ratio = safe_ratio;
+            self.config.safe_ratio = safe_ratio;
         }
 
         if let Some(bid_fee) = bid_fee {
-            self.bid_fee = bid_fee;
+            self.assert_fees(bid_fee + self.config.liquidator_fee);
+            self.config.bid_fee = bid_fee;
         }
 
-        if let Some(max_premium_rate) = max_premium_rate {
-            self.max_premium_rate = max_premium_rate;
+        if let Some(liquidator_fee) = liquidator_fee {
+            self.assert_fees(liquidator_fee + self.config.bid_fee);
+            self.config.liquidator_fee = liquidator_fee;
         }
 
         if let Some(liquidation_threshold) = liquidation_threshold {
-            self.liquidation_threshold = liquidation_threshold;
+            self.config.liquidation_threshold = liquidation_threshold;
+        }
+
+        if let Some(waiting_period) = waiting_period {
+            self.config.waiting_period = waiting_period.into();
+        }
+
+        if let Some(collateral_info) = collateral_info {
+            self.config.collateral_info = collateral_info;
         }
     }
 }
