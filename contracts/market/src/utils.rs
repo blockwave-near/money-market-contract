@@ -38,7 +38,7 @@ pub trait OverseerContract {
 }
 
 #[ext_contract(ext_self)]
-pub trait SelfContract {
+pub trait Contract {
   fn callback_compute_interset(
     &mut self,
     block_height: BlockHeight,

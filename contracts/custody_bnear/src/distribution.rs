@@ -41,7 +41,5 @@ impl Contract {
   }
 
   // Executor: itself
-  // pub fn swap_to_stable_denom(&self) {
-
-  // }
+  pub fn swap_to_stable_denom(&self) {}
 }

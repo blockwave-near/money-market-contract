@@ -19,7 +19,7 @@ pub trait MarketContract {
 }
 
 #[ext_contract(ext_self)]
-pub trait SelfContract {
+pub trait Contract {
   fn callback_unlock_collateral(
     &self,
     borrower: AccountId,
@@ -46,7 +46,6 @@ pub struct BorrowerInfo {
   pub pending_rewards: D128,
 }
 
-// TODO: need to move to each files(ex. borrow.ts, deposit.ts, etc )?
 #[near_bindgen]
 impl Contract {
   fn callback_unlock_collateral(
