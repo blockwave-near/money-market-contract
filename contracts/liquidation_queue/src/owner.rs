@@ -5,11 +5,11 @@ impl Contract {
     pub fn update_config(
         &mut self,
         owner: Option<ValidAccountId>,
-        bnear_contract: Option<ValidAccountId>,
         stable_coin_contract: Option<ValidAccountId>,
         requester_contract: Option<ValidAccountId>,
         oracle_payment_token: Option<ValidAccountId>,
         overseer_contract: Option<ValidAccountId>,
+        custody_contract: Option<ValidAccountId>,
         safe_ratio: Option<D128>,
         bid_fee: Option<D128>,
         liquidator_fee: Option<D128>,
@@ -21,10 +21,6 @@ impl Contract {
 
         if let Some(owner) = owner {
             self.config.owner = owner.into();
-        }
-
-        if let Some(bnear_contract) = bnear_contract {
-            self.config.bnear_contract = bnear_contract.into();
         }
 
         if let Some(stable_coin_contract) = stable_coin_contract {
@@ -43,17 +39,21 @@ impl Contract {
             self.config.overseer_contract = overseer_contract.into();
         }
 
+        if let Some(custody_contract) = custody_contract {
+            self.config.custody_contract = custody_contract.into();
+        }
+
         if let Some(safe_ratio) = safe_ratio {
             self.config.safe_ratio = safe_ratio;
         }
 
         if let Some(bid_fee) = bid_fee {
-            self.assert_fees(bid_fee + self.config.liquidator_fee);
+            assert_fees(bid_fee + self.config.liquidator_fee);
             self.config.bid_fee = bid_fee;
         }
 
         if let Some(liquidator_fee) = liquidator_fee {
-            self.assert_fees(liquidator_fee + self.config.bid_fee);
+            assert_fees(liquidator_fee + self.config.bid_fee);
             self.config.liquidator_fee = liquidator_fee;
         }
 

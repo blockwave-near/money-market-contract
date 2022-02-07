@@ -4,20 +4,6 @@ use flux_sdk::consts::{DR_NEW_GAS, GAS_BASE_TRANSFER};
 use flux_sdk::{DataRequestDetails, RequestStatus, Outcome, AnswerType};
 use near_sdk::{ext_contract, AccountId};
 
-#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone, Debug, PartialEq)]
-#[serde(crate = "near_sdk::serde")]
-pub struct BnearReceiverPayload {
-    pub liquidator: AccountId,
-    pub repay_address: Option<AccountId>,
-    pub fee_address: Option<AccountId>
-}
-
-#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone, Debug, PartialEq)]
-#[serde(crate = "near_sdk::serde")]
-pub struct StableReceiverPayload {
-    pub premium_slot: D128,
-}
-
 #[ext_contract(fungible_token)]
 pub trait FungibleToken {
     fn ft_transfer(

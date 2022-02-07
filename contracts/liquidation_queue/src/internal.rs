@@ -2,19 +2,6 @@ use crate::*;
 
 #[near_bindgen]
 impl Contract {
-    pub(crate) fn assert_owner(&self) {
-        assert_eq!(
-            env::predecessor_account_id(),
-            self.config.owner,
-            "This method can only be called by {}",
-            self.config.owner
-        );
-    }
-
-    pub(crate) fn assert_fees(&self, fees: D128) {
-        assert!(fees > D128::one(), "The sum of bid_fee and liquidator_fee can not be greater than one");
-    }
-
     /// updates price response at every function call
     pub(crate) fn internal_update_price_response(
         &mut self,
@@ -43,69 +30,150 @@ impl Contract {
         );
     }
 
-    /// callback on transfer stable coin
-    pub(crate) fn internal_submit_bid(&mut self, bidder: AccountId, premium_slot: u8, amount: U128) {
-        self.internal_update_price_response();
-        assert!(self.internal_read_bid(&bidder).is_none(), "User already has bid");
-        assert!(premium_rate < self.config.max_premium_rate, "Premium rate cannot exceed the max premium rate");
+    /// On each collateral execution the product_snapshot and sum_snapshot are updated
+    /// to track the expense and reward distribution for biders in the pool
+    pub(crate) fn internal_execute_pool_liquidation(
+        &mut self, 
+        bid_pool: &mut BidPool,
+        premium_slot: u8,
+        collateral_to_liquidate: u128,
+        price: D128,
+        filled: &mut bool,
+    ) -> (u128, u128) {
+        let premium_price: D128 = price * (D128::one() - bid_pool.premium_rate);
+        let mut pool_collateral_to_liquidate: u128 = collateral_to_liquidate;
+        let mut pool_required_stable: D128 = pool_collateral_to_liquidate * premium_price;
 
-        // read or create bid_pool, make sure slot is valid
-        let mut bid_pool: BidPool =
-            self.internal_read_or_create_bid_pool(&collateral_info, premium_slot);
+        if pool_required_stable > D128::new(bid_pool.total_bid_amount.0 * DECIMAL) {
+            pool_required_stable = D128::new(bid_pool.total_bid_amount.0 * DECIMAL);
+            pool_collateral_to_liquidate = (pool_required_stable / premium_price).as_u128();
+        } else {
+            *filled = true;
+        }
 
-        self.internal_store_bid(
-            &bidder,
-            Bid {
-                amount,
-                premium_rate
-            }
+        // E / D
+        let col_per_bid: D128 = D128::new(pool_collateral_to_liquidate * DECIMAL)
+            / bid_pool.total_bid_amount.0;
+        
+        // Q / D
+        let expense_per_bid: D128 = pool_required_stable
+            / bid_pool.total_bid_amount.0;
+        
+        ///////// Update sum /////////
+        // E / D * P     
+        let sum: D128 = bid_pool.product_snapshot * col_per_bid;   
+
+        // S + E / D * P
+        bid_pool.sum_snapshot = bid_pool.sum_snapshot + sum;
+        bid_pool.total_bid_amount = (bid_pool.total_bid_amount.0 - pool_required_stable.as_u128()).into();
+
+        // save reward sum for current epoch and scale
+        self.internal_store_epoch_scale_sum(
+            premium_slot,
+            bid_pool.current_epoch,
+            bid_pool.current_scale,
+            bid_pool.sum_snapshot,
         );
+
+        ///////// Update product /////////
+        // Check if the pool is emptied, if it is, reset (P = 1, S = 0)
+        if expense_per_bid == D128::one() {
+            bid_pool.sum_snapshot = D128::zero();
+            bid_pool.product_snapshot = D128::one();
+            bid_pool.current_scale = U128(0);
+
+            bid_pool.current_epoch = (bid_pool.current_epoch.0 + 1).into();
+        } else {
+            // 1 - Q / D
+            let product: D128 = D128::one() - expense_per_bid;
+
+            // check if scale needs to be increased (in case product truncates to zero)
+            let new_product: D128 = bid_pool.product_snapshot * product;
+            bid_pool.product_snapshot = if new_product < D128::new(1_000_000_000) {
+                bid_pool.current_scale = (bid_pool.current_scale.0 + 1).into();
+
+                D128::new(bid_pool.product_snapshot.num.0 * 1_000_000_000u128) * product
+            } else {
+                new_product
+            };
+        }
+
+        env::log(
+            format!(
+                "product: {}", bid_pool.product_snapshot
+            )
+        );
+        (pool_required_stable.as_u128(), pool_collateral_to_liquidate)
     }
 
-    /// callback on transfer bnear token
-    pub(crate) fn internal_execute_bid(
-        &mut self,
-        liquidator: AccountId,
-        repay_address: AccountId,
-        fee_address: AccountId,
-        amount: U128,   // amount of bNEAR (decimal: 24)
-    ) {
-        self.internal_update_price_response();
-        let bid: Bid = self.internal_get_bid(&liquidator).expect("No bids with the specified information exist");
+    pub(crate) fn internal_calculate_remaining_bid(&self, bid: &Bid, bid_pool: &BidPool) -> (U128, D128) {
+        let scale_diff: u128 = bid_pool.current_scale.0.checked_sub(bid.scale_snapshot.0).unwrap();
+        let epoch_diff: u128 = bid_pool.current_epoch.0.checked_sub(bid.epoch_snapshot.0).unwrap();
 
-        // corresponding collateral bNEAR value in USD (decimal: 6, which is decimal of USDT)
-        let collateral_value: Balance = self.last_price_response.price.mul_int(amount.0) / 1_000_000_000_000_000_000;
-        // required amount of USDT (decimal: 6)
-        let required_stable: Balance = (D128::one() - std::cmp::min(bid.premium_rate, self.max_premium_rate))
-            .mul_int(collateral_value);
-        
-        if required_stable > bid.amount.0 {
-            panic!("Insufficient bid balance; Required balance: {}", required_stable);
-        }
-
-        // Update bid
-        if bid.amount.0 == required_stable {
-            self.internal_remove_bid(&liquidator);
+        let remaining_bid_dec: D128 = if epoch_diff != 0 {
+            // pool was emptied, return 0
+            D128::zero()
+        } else if scale_diff == 0 {
+            bid.amount.0 * bid_pool.product_snapshot / bid.product_snapshot
+        } else if scale_diff == 1 {
+            // product has been scaled
+            let scaled_remaining_bid: D128 =
+                bid.amount.0 * bid_pool.product_snapshot / bid.product_snapshot;
+            
+            D128::new(scaled_remaining_bid.num.0 / 1_000_000_000u128)
         } else {
-            self.internal_store_bid(
-                &liquidator,
-                Bid {
-                    amount: (bid.amount.0 - required_stable).into(),
-                    ..bid
-                }
-            );
-        }
+            D128::zero()
+        };
 
-        // decimal: 6
-        let bid_fee: Balance = self.config.bid_fee.mul_int(required_stable);
-        // decimal: 6
-        let repay_amount: Balance = required_stable - bid_fee;
+        let remaining_bid: u128 = remaining_bid_dec.as_u128();
+        // stacks the residue when converting to integer
+        let bid_residue: D128 = remaining_bid_dec - remaining_bid;
 
-        fungible_token_transfer(self.config.bnear_contract.clone(), liquidator, amount.0)
-            .and(fungible_token_transfer(self.config.stable_coin_contract.clone(), repay_address, repay_amount));
-        
-        if bid_fee != 0 {
-            fungible_token_transfer(self.config.stable_coin_contract.clone(), fee_address, bid_fee);
+        (remaining_bid.into(), bid_residue)
+    }
+
+    pub(crate) fn internal_calculate_liquidated_collateral(&self, bid: &Bid) -> (U128, D128) {
+        let reference_sum_snapshot: D128 = self.internal_read_epoch_scale_sum(
+            bid.premium_slot,
+            bid.epoch_snapshot,
+            bid.scale_snapshot,
+        ).unwrap_or(D128::zero());
+
+        // reward = reward from first scale + reward from second scale (if any)
+        let first_portion = reference_sum_snapshot - bid.sum_snapshot;
+        let second_portion: D128 = if let Some(second_scale_sum_snapshot) = self.internal_read_epoch_scale_sum(
+            bid.premium_slot,
+            bid.epoch_snapshot,
+            (bid.scale_snapshot.0 + 1).into()
+        ) {
+            D128::new((second_scale_sum_snapshot.num.0 - reference_sum_snapshot.num.0) / 1_000_000_000u128)
+        } else {
+            D128::zero()
+        };
+
+        let liquidation_collateral_dec: D128 = bid.amount.0 * (first_portion + second_portion)
+            / bid.product_snapshot;
+        let liquidated_collateral: u128 = liquidation_collateral_dec.as_u128();
+        // stacks the residue when converting to integer
+        let residue_collateral: D128 =
+            liquidation_collateral_dec - liquidated_collateral;
+
+        (liquidated_collateral.into(), residue_collateral)
+    }
+
+    pub(crate) fn internal_claim_col_residue(&self, bid_pool: &mut BidPool) -> u128 {
+        let claimable = bid_pool.residue_collateral.as_u128();
+        if claimable != 0 {
+            bid_pool.residue_collateral = bid_pool.residue_collateral - claimable;
         }
+        claimable
+    }
+
+    pub(crate) fn internal_claim_bid_residue(&self, bid_pool: &mut BidPool) -> u128 {
+        let claimable = bid_pool.residue_bid.as_u128();
+        if claimable != 0 {
+            bid_pool.residue_bid = bid_pool.residue_bid - claimable;
+        }
+        claimable
     }
 }

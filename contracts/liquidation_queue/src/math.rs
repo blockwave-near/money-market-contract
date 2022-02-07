@@ -3,6 +3,7 @@ use near_sdk::serde::{Serialize, Deserialize};
 use near_sdk::json_types::U128;
 use std::ops::{Add, Sub, Mul, Div};
 use std::cmp::Ordering;
+use std::fmt;
 use uint::construct_uint;
 
 construct_uint! {
@@ -211,5 +212,25 @@ impl Eq for D128 {}
 impl PartialEq for D128 {
     fn eq(&self, other: &Self) -> bool {
         self.num.0 == other.num.0
+    }
+}
+
+impl fmt::Display for D128 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let whole = (self.num.0) / DECIMAL;
+        let fractional = (self.num.0) % DECIMAL;
+
+        if fractional == 0 {
+            write!(f, "{}", whole)
+        } else {
+            let fractional_string = fractional.to_string();
+            let fractional_string = "0".repeat(self.decimal as usize - fractional_string.len()) + &fractional_string;
+
+            f.write_str(&whole.to_string())?;
+            f.write_str(&'.'.to_string())?;
+            f.write_str(fractional_string.trim_end_matches('0'))?;
+
+            Ok(())
+        }
     }
 }
