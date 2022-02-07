@@ -19,11 +19,10 @@ pub trait FungibleToken {
 #[ext_contract(ext_reward)]
 pub trait RewardContract {
   fn get_accrued_rewards(&self, address: AccountId) -> U128;
-  fn claim_rewards(&self);
 }
 
 #[ext_contract(ext_self)]
-pub trait SelfContract {
+pub trait Contract {
   fn callback_distribute_rewards(&mut self, REWARDS_THRESHOLD: Balance);
   fn callback_distribute_hook(&self);
 }
@@ -47,8 +46,7 @@ impl Contract {
           return;
         }
 
-        ext_reward::claim_rewards(&self.config.reward_contract, NO_DEPOSIT, SINGLE_CALL_GAS);
-        // TODO: is it right?
+        self.swap_to_stable_denom();
       }
     }
   }
