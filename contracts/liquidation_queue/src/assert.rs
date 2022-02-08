@@ -39,9 +39,9 @@ pub fn assert_activate_status(bid: &Bid, available_bids: U128, bid_threshold: U1
 pub fn assert_withdraw_amount(withdraw_amount: Option<U128>, withdrawable_amount: U128) -> U128 {
     let to_withdraw: U128 = if let Some(amount) = withdraw_amount {
         if amount.0 > withdrawable_amount.0 {
-            panic!("{}", format!(
+            panic!(
                 "Requested amount is bigger than current withdrawable amount ({})",
-                withdrawable_amount.0)
+                withdrawable_amount.0
             );
         }
         amount
