@@ -3,8 +3,10 @@ use crate::*;
 impl Contract {
   pub fn deposit_stable(&mut self, deposit_amount: Balance) {
     if deposit_amount == 0 {
-      env::panic("".as_bytes()); // TODO
+      env::panic("Zero Deposit".as_bytes());
     }
+
+    let depositor = env::predecessor_account_id();
 
     let block_height = env::block_index();
 
@@ -15,6 +17,7 @@ impl Contract {
       .compute_exchange_rate(Some(deposit_amount))
       .then(ext_self::callback_deposit_stable(
         deposit_amount,
+        depositor,
         &env::current_account_id(),
         NO_DEPOSIT,
         SINGLE_CALL_GAS,
@@ -27,10 +30,13 @@ impl Contract {
     self.compute_interest(block_height, None);
     self.compute_reward(block_height);
 
+    let redeemer = env::predecessor_account_id();
+
     self
       .compute_exchange_rate(None)
       .then(ext_self::callback_redeem_stable(
         burn_amount,
+        redeemer,
         &env::current_account_id(),
         NO_DEPOSIT,
         SINGLE_CALL_GAS,

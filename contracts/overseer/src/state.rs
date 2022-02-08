@@ -14,16 +14,19 @@ pub struct Config {
   // pub buffer_distribution_factor: D128,
   // pub anc_purchase_factor: D128,
   // pub price_timeframe: BlockHeight,
+  pub oracle_payment_token: AccountId,
+  pub requester_contract: AccountId,
 }
 
-#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone, Copy)]
+#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct State {
   // pub deposit_rate: D128,
-// pub prev_stable_coin_total_supply: Balance,
-// pub prev_exchange_rate: D128,
-// pub prev_interest_buffer: u128,
-// pub last_executed_height: BlockHeight,
+  // pub prev_stable_coin_total_supply: Balance,
+  // pub prev_exchange_rate: D128,
+  // pub prev_interest_buffer: u128,
+  // pub last_executed_height: BlockHeight,
+  pub last_price_response: PriceResponse,
 }
 
 #[derive(BorshDeserialize, BorshSerialize)]

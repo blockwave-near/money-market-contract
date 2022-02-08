@@ -15,6 +15,7 @@ impl Contract {
 
     ext_overseer::get_borrow_limit(
       borrower,
+      Some(env::block_timestamp()),
       &self.config.overseer_contract,
       NO_DEPOSIT,
       SINGLE_CALL_GAS,

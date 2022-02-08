@@ -9,10 +9,12 @@ use near_sdk::{
 
 use uint::construct_uint;
 
-use crate::math::D128;
+use crate::math::{D128, DECIMAL};
 use crate::state::{Collection, Config, State, WhitelistElem};
 use crate::tokens::{Token, Tokens, TokensMath};
-use crate::utils::{ext_market, ext_self, fungible_token};
+use crate::utils::{
+    ext_custody_bnear, ext_market, ext_self, fungible_token, fungible_token_transfer_call,
+};
 
 mod collateral;
 mod internal;
@@ -40,6 +42,13 @@ pub(crate) enum StorageKey {
     Collateral,
 }
 
+#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[serde(crate = "near_sdk::serde")]
+pub struct PriceResponse {
+    pub price: D128,
+    pub last_updated_at: u64,
+}
+
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
 pub struct Contract {
@@ -58,6 +67,8 @@ impl Contract {
         liquidation_contract: AccountId,
         collector_contract: AccountId,
         target_deposit_rate: D128,
+        oracle_payment_token: AccountId,
+        requester_contract: AccountId,
     ) -> Self {
         assert!(!env::state_exists(), "The contract is already initialized");
         assert!(
@@ -72,20 +83,31 @@ impl Contract {
             liquidation_contract,
             collector_contract,
             target_deposit_rate,
+            oracle_payment_token,
+            requester_contract,
         };
 
-        let state = State {};
+        let state = State {
+            last_price_response: PriceResponse {
+                price: D128::one(),
+                last_updated_at: env::block_timestamp(),
+            },
+        };
 
         let collection = Collection {
             white_list_elem_map: LookupMap::new(StorageKey::WhitelistElem),
             collateral_map: LookupMap::new(StorageKey::Collateral),
         };
 
-        Self {
+        let mut instance = Self {
             config,
             state,
             collection,
-        }
+        };
+
+        instance.internal_create_new_price_request();
+
+        instance
     }
 
     #[payable]

@@ -1,26 +1,5 @@
 use crate::*;
 
-// #[ext_contract(ext_interest_model)]
-// pub trait ExtInterestModel {
-//   fn get_borrow_rate(
-//     &self,
-//     market_balance: Balance,
-//     total_liabilities: U128,
-//     total_reserves: U128,
-//   ) -> d128;
-// }
-
-// #[ext_contract(ext_distribution_model)]
-// pub trait ExtDistributionModel {
-//   fn get_emission_rate(
-//     &self,
-//     deposit_rate: d128,
-//     target_deposit_rate: d128,
-//     threshold_deposit_rate: d128,
-//     current_emission_rate: d128,
-//   ) -> d128;
-// }
-
 #[ext_contract(fungible_token)]
 pub trait FungibleToken {
   fn ft_total_supply(&self) -> PromiseOrValue<U128>;
@@ -28,11 +7,19 @@ pub trait FungibleToken {
   fn ft_balance_of(&self, account_id: AccountId) -> PromiseOrValue<U128>;
 
   fn ft_transfer(&mut self, receiver_id: AccountId, amount: U128, memo: Option<String>) -> Promise;
+
+  fn mint(&mut self, account_id: AccountId, amount: Balance);
+
+  fn burn(&mut self, account_id: AccountId, amount: Balance);
 }
 
 #[ext_contract(ext_overseer)]
 pub trait OverseerContract {
-  fn get_borrow_limit(&self, borrower: AccountId) -> PromiseOrValue<(AccountId, U128)>;
+  fn get_borrow_limit(
+    &self,
+    borrower: AccountId,
+    block_time: Option<BlockHeight>,
+  ) -> PromiseOrValue<(AccountId, U128)>;
 
   fn get_target_deposit_rate(&self) -> PromiseOrValue<D128>;
 }
@@ -53,9 +40,9 @@ pub trait Contract {
     deposit_amount: Option<Balance>,
   ) -> D128;
 
-  fn callback_deposit_stable(&self, deposit_amount: Balance);
+  fn callback_deposit_stable(&self, deposit_amount: Balance, depositor: AccountId);
 
-  fn callback_redeem_stable(&self, burn_amount: Balance);
+  fn callback_redeem_stable(&self, burn_amount: Balance, redeemer: AccountId);
 
   fn callback_execute_epoch_operations(
     &self,
@@ -66,7 +53,6 @@ pub trait Contract {
   );
 }
 
-// TODO: need to move to each files(ex. borrow.ts, deposit.ts, etc )?
 #[near_bindgen]
 impl Contract {
   #[private]
@@ -173,7 +159,7 @@ impl Contract {
   }
 
   #[private]
-  fn callback_deposit_stable(&mut self, deposit_amount: Balance) {
+  fn callback_deposit_stable(&mut self, deposit_amount: Balance, depositor: AccountId) {
     assert_eq!(env::promise_results_count(), 1, "This is a callback method");
 
     match env::promise_result(0) {
@@ -187,13 +173,19 @@ impl Contract {
 
         self.state.prev_stable_coin_total_supply += mint_amount;
 
-        // TODO response mint_amount
+        fungible_token::mint(
+          depositor,
+          mint_amount,
+          &self.config.stable_coin_contract,
+          NO_DEPOSIT,
+          SINGLE_CALL_GAS,
+        );
       }
     }
   }
 
   #[private]
-  fn callback_redeem_stable(&mut self, burn_amount: Balance) {
+  fn callback_redeem_stable(&mut self, burn_amount: Balance, redeemer: AccountId) {
     assert_eq!(env::promise_results_count(), 1, "This is a callback method");
 
     match env::promise_result(0) {
@@ -212,8 +204,21 @@ impl Contract {
         self.state.prev_stable_coin_total_supply =
           self.state.prev_stable_coin_total_supply - burn_amount;
 
-        // TODO response for redeem success
-        let sender = env::predecessor_account_id();
+        fungible_token::burn(
+          redeemer.clone(),
+          burn_amount,
+          &self.config.stable_coin_contract,
+          NO_DEPOSIT,
+          SINGLE_CALL_GAS,
+        )
+        .and(fungible_token::ft_transfer(
+          redeemer,
+          U128::from(redeem_amount.as_u128()),
+          None,
+          &self.config.stable_coin_contract,
+          NO_DEPOSIT,
+          SINGLE_CALL_GAS,
+        ));
       }
     }
   }

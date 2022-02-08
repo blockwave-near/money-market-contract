@@ -11,10 +11,14 @@ impl Contract {
 
     for collateral in cur_collaterals {
       let white_list_elem: WhitelistElem = self.get_white_list_elem_map(&collateral.0);
-      // TODO handle result with {borrwer, amount} from custody
+      ext_custody_bnear::lock_collateral(
+        borrower.clone(),
+        collateral.1,
+        &white_list_elem.custody_contract,
+        NO_DEPOSIT,
+        SINGLE_CALL_GAS,
+      );
     }
-
-    //TODO return result
   }
 
   pub fn unlock_collateral(&mut self, collaterals: Tokens) {
@@ -83,9 +87,8 @@ impl Contract {
       let collateral_token = collateral.0.clone();
       let collateral_amount = collateral.1;
 
-      let price = D128::new(0); // TODO: get from oracle
+      let price = self.state.last_price_response.price;
 
-      // TODO: move below code to callback method
       let elem: WhitelistElem = self.get_white_list_elem_map(&collateral.0);
       let collateral_value = collateral_amount * price;
       borrow_limit += (collateral_value * elem.max_ltv).as_u128();

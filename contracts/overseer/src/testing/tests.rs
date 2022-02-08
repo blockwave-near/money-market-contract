@@ -16,6 +16,8 @@ fn setup_contract() -> (VMContextBuilder, Contract) {
     AccountId::from("liquidation"),
     AccountId::from("collector"),
     D128::one(),
+    AccountId::from("oralce_payment_token"),
+    AccountId::from("requester"),
   );
   (context, contract)
 }
