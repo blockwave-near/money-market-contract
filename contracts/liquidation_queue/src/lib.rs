@@ -112,7 +112,6 @@ impl Contract {
     #[init]
     pub fn new(
         owner: ValidAccountId,
-        bnear_contract: ValidAccountId,
         stable_coin_contract: ValidAccountId,
         requester_contract: ValidAccountId,
         oracle_payment_token: ValidAccountId,
@@ -158,8 +157,6 @@ impl Contract {
     /// Bids are not used for liquidations until activated
     pub fn activate_bids(&mut self, bids_idx: Option<Vec<U128>>) {
         let bidder: AccountId = env::predecessor_account_id();
-        let collateral_info: CollateralInfo = self.config.collateral_info;
-        let bnear_contract: AccountId = collateral_info.bnear_contract;
         let mut available_bids: U128 = self.total_bids;
 
         let bids: Vec<Bid> = if let Some(bids_idx) = &bids_idx {
@@ -186,11 +183,11 @@ impl Contract {
 
             // assert that the bid is inactive and wait period has expired
             if let Err(err_msg) = 
-                assert_activate_status(&bid, available_bids, collateral_info.bid_threshold)
+                assert_activate_status(&bid, available_bids, self.config.collateral_info.bid_threshold)
             {
                 if bids_idx.is_some() {
                     // if the user provided the idx to activate, we should return error to notify the user
-                    panic!(err_msg);
+                    panic!("{}", err_msg);
                 } else {
                     // otherwise just skip this bid
                     continue;
@@ -356,7 +353,7 @@ impl Contract {
         }
         if claim_amount != 0 {
             fungible_token_transfer(
-                self.config.collateral_info.bnear_contract, 
+                self.config.collateral_info.bnear_contract.clone(), 
                 bidder, 
                 claim_amount
             );

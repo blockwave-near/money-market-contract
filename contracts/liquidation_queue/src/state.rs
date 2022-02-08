@@ -131,12 +131,12 @@ impl Contract{
     }
 }
 
-// this will set the first key after the provided key, by appending a 1 byte
+// this will set the first key after the provided key, by appending 1
 fn calc_range_start_idx(start_after: Option<U128>) -> u128 {
     start_after.unwrap_or(U128(0)).0 + 1
 }
 
-// this will set the first key after the provided key, by appending a 1 byte
+// this will set the first key after the provided key, by appending 1
 fn calc_range_start(start_after: Option<u8>) -> u8 {
     start_after.unwrap_or(0) + 1
 }

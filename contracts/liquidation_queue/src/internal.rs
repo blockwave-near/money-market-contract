@@ -101,7 +101,7 @@ impl Contract {
         env::log(
             format!(
                 "product: {}", bid_pool.product_snapshot
-            )
+            ).as_bytes()
         );
         (pool_required_stable.as_u128(), pool_collateral_to_liquidate)
     }

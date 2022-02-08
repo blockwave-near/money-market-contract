@@ -15,7 +15,7 @@ impl Contract {
     ) {
         self.internal_update_price_response();
 
-        let config: Config = self.config;
+        let config: Config = self.config.clone();
         let collateral_info: CollateralInfo = config.collateral_info;
         let available_bids: u128 = self.total_bids.0;
 
@@ -63,14 +63,14 @@ impl Contract {
         let repay_amount: D128 = repay_amount - bid_fee - liquidator_fee;
         
         fungible_token_transfer(
-            config.stable_coin_contract, 
+            config.stable_coin_contract.clone(), 
             repay_address, 
             repay_amount.as_u128()
         );
 
         if bid_fee != D128::zero() {
             fungible_token_transfer(
-                config.stable_coin_contract, 
+                config.stable_coin_contract.clone(), 
                 fee_address, 
                 bid_fee.as_u128()
             );
@@ -78,7 +78,7 @@ impl Contract {
 
         if liquidator_fee != D128::zero() {
             fungible_token_transfer(
-                config.stable_coin_contract, 
+                config.stable_coin_contract.clone(), 
                 liquidator, 
                 liquidator_fee.as_u128()
             );
@@ -91,7 +91,7 @@ impl Contract {
     pub(crate) fn on_receive_submit_bid(&mut self, bidder: AccountId, premium_slot: u8, amount: U128) {
         self.internal_update_price_response();
         
-        let config = self.config;
+        let config = self.config.clone();
         let collateral_info = config.collateral_info;
 
         // read or create bid_pool, make sure slot is valid
