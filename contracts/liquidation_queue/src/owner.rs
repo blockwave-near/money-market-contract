@@ -2,6 +2,7 @@ use crate::*;
 
 #[near_bindgen]
 impl Contract {
+    #[payable]
     pub fn update_config(
         &mut self,
         owner: Option<ValidAccountId>,
@@ -18,6 +19,8 @@ impl Contract {
         collateral_info: Option<CollateralInfo>,
     ) {
         self.assert_owner();
+        assert_one_yocto();
+        self.internal_update_price_response();
 
         if let Some(owner) = owner {
             self.config.owner = owner.into();

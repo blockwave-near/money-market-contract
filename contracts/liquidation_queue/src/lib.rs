@@ -155,7 +155,11 @@ impl Contract {
 
     /// After bids are submitted, need to execute the activation after wait_period expires
     /// Bids are not used for liquidations until activated
+    #[payable]
     pub fn activate_bids(&mut self, bids_idx: Option<Vec<U128>>) {
+        assert_one_yocto();
+        self.internal_update_price_response();
+
         let bidder: AccountId = env::predecessor_account_id();
         let mut available_bids: U128 = self.total_bids;
 
@@ -288,8 +292,12 @@ impl Contract {
     }
 
     /// Bid owner can claim their share of the liquidated collateral until the
-    /// bid is consumed     
+    /// bid is consumed  
+    #[payable]   
     pub fn claim_liquidations(&mut self, bids_idx: Option<Vec<U128>>) {
+        assert_one_yocto();
+        self.internal_update_price_response();
+        
         let bidder: AccountId = env::predecessor_account_id();
 
         let bids: Vec<Bid> = if let Some(bids_idx) = bids_idx {
