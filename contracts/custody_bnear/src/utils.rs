@@ -2,23 +2,23 @@ use crate::*;
 
 #[ext_contract(fungible_token)]
 pub trait FungibleToken {
-  fn ft_total_supply(&self) -> PromiseOrValue<U128>;
+  fn ft_total_supply(&self) -> U128;
 
-  fn ft_balance_of(&self, account_id: AccountId) -> PromiseOrValue<U128>;
+  fn ft_balance_of(&self, account_id: AccountId) -> U128;
 
-  fn ft_transfer(&mut self, receiver_id: AccountId, amount: U128, memo: Option<String>) -> Promise;
+  fn ft_transfer(&mut self, receiver_id: AccountId, amount: U128, memo: Option<String>);
   fn ft_transfer_call(
     &mut self,
     receiver_id: AccountId,
     amount: U128,
     memo: Option<String>,
     msg: String,
-  ) -> Promise;
+  ) -> PromiseOrValue<U128>;
 }
 
 #[ext_contract(ext_reward)]
 pub trait RewardContract {
-  fn get_accrued_rewards(&self, address: AccountId) -> U128;
+  fn get_account_stake_rewards(&self, account_id: AccountId) -> U128;
 }
 
 #[ext_contract(ext_self)]
@@ -27,7 +27,6 @@ pub trait Contract {
   fn callback_distribute_hook(&self);
 }
 
-// TODO: need to move to each files(ex. borrow.ts, deposit.ts, etc )?
 #[near_bindgen]
 impl Contract {
   #[private]

@@ -3,7 +3,7 @@ use crate::*;
 // REWARD_THRESHOLD
 // This value is used as the minimum reward claim amount
 // thus if a user's reward is less than 1 ust do not send the ClaimRewards msg
-const REWARDS_THRESHOLD: Balance = 1_000_000u128; // TODO check decimal
+const REWARDS_THRESHOLD: Balance = 1_000_000u128;
 
 #[near_bindgen]
 impl Contract {
@@ -11,7 +11,7 @@ impl Contract {
   pub fn distribute_rewards(&self) {
     self.assert_overseer();
 
-    ext_reward::get_accrued_rewards(
+    ext_reward::get_account_stake_rewards(
       env::current_account_id(),
       &self.config.reward_contract,
       NO_DEPOSIT,

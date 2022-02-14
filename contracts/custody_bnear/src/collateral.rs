@@ -3,7 +3,7 @@ use crate::*;
 #[near_bindgen]
 impl Contract {
   // Executor: bAsset token contract
-  pub fn deposit_collateal(&mut self, borrower: AccountId, amount: Balance) {
+  pub(crate) fn deposit_collateal(&mut self, borrower: AccountId, amount: Balance) {
     let mut borrower_info: BorrowerInfo = self.get_borrower_info_map(&borrower);
 
     borrower_info.balance += amount;
@@ -96,10 +96,12 @@ impl Contract {
     borrower_info.balance = borrower_info.balance - amount;
     self.add_borrower_info_map(&borrower, &borrower_info);
 
-    let msg = serde_json::to_string(&{
-      // TODO: call liquidation. how?
+    let msg = serde_json::json!({
+      "liquidator": liquidator,
+      "repay_address": self.config.overseer_contract,
+      "fee_address": self.config.market_contract,
     })
-    .unwrap();
+    .to_string();
 
     fungible_token::ft_transfer_call(
       self.config.liquidation_contract.clone(),
