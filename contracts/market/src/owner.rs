@@ -9,6 +9,7 @@ impl Contract {
     stable_coin_contract: Option<AccountId>,
     max_borrow_factor: Option<D128>,
     overseer_contract: Option<AccountId>,
+    collector_contract: Option<AccountId>,
   ) {
     self.assert_owner();
     assert_one_yocto();
@@ -24,6 +25,9 @@ impl Contract {
     }
     if let Some(overseer_contract) = overseer_contract {
       self.config.overseer_contract = overseer_contract;
+    }
+    if let Some(collector_contract) = collector_contract {
+      self.config.collector_contract = collector_contract;
     }
   }
 

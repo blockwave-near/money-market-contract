@@ -88,7 +88,7 @@ impl Contract {
     self.compute_borrower_reward(&mut liability);
 
     let claim_amount: Balance = liability.pending_rewards.as_u128();
-    liability.pending_rewards = liability.pending_rewards - claim_amount; // TODO why not assign 0 ?
+    liability.pending_rewards = liability.pending_rewards - claim_amount;
 
     self.add_borrower_info_map(&borrower, &liability);
 

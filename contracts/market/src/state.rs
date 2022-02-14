@@ -7,6 +7,7 @@ pub struct Config {
   pub stable_coin_contract: AccountId,
   pub max_borrow_factor: D128,
   pub overseer_contract: AccountId,
+  pub collector_contract: AccountId,
 }
 
 #[derive(

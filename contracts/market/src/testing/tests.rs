@@ -14,6 +14,7 @@ pub fn setup_contract() -> (VMContextBuilder, Contract) {
     D128::zero(),
     AccountId::from("stable_coin"),
     AccountId::from("overseer"),
+    AccountId::from("collector"),
     D128::new_exp(1, -1),
     D128::new_exp(1, -1),
     D128::new_exp(100, 0),
@@ -74,6 +75,7 @@ fn update_config() {
     Some(AccountId::from("stable_coin1")),
     Some(D128::one()),
     Some(AccountId::from("overseer1")),
+    Some(AccountId::from("collector1")),
   );
 
   assert_eq!(D128::one(), contract.config.max_borrow_factor);
@@ -85,8 +87,12 @@ fn update_config() {
     AccountId::from("overseer1"),
     contract.config.overseer_contract
   );
+  assert_eq!(
+    AccountId::from("collector1"),
+    contract.config.collector_contract
+  );
 
-  contract.update_config(Some(AccountId::from("owner1")), None, None, None);
+  contract.update_config(Some(AccountId::from("owner1")), None, None, None, None);
 
   assert_eq!(AccountId::from("owner1"), contract.config.owner_id);
 }
@@ -96,8 +102,8 @@ fn update_config() {
 fn assert_owner() {
   let (_, mut contract) = setup_contract();
 
-  contract.update_config(Some(AccountId::from("owner1")), None, None, None);
-  contract.update_config(Some(AccountId::from("owner2")), None, None, None);
+  contract.update_config(Some(AccountId::from("owner1")), None, None, None, None);
+  contract.update_config(Some(AccountId::from("owner2")), None, None, None, None);
 }
 
 #[test]

@@ -63,6 +63,7 @@ impl Contract {
         max_borrow_factor: D128,
         stable_coin_contract: AccountId,
         overseer_contract: AccountId,
+        collector_contract: AccountId,
 
         base_rate: D128,
         interest_multiplier: D128,
@@ -83,6 +84,7 @@ impl Contract {
             max_borrow_factor,
             stable_coin_contract,
             overseer_contract,
+            collector_contract,
         };
 
         let state = State {

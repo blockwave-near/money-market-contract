@@ -14,6 +14,7 @@ pub fn setup_contract() -> (VMContextBuilder, Contract) {
     D128::zero(),
     AccountId::from("stable_coin"),
     AccountId::from("overseer"),
+    AccountId::from("collector"),
     D128::new_exp(1, -1),
     D128::new_exp(1, -1),
     D128::new_exp(100, 0),
@@ -91,6 +92,7 @@ fn proper_compute_interest() {
     stable_coin_contract: AccountId::from("stable_coin"),
     max_borrow_factor: D128::one(),
     overseer_contract: AccountId::from("overseer"),
+    collector_contract: AccountId::from("collector"),
   };
 
   let mut mock_state = State {

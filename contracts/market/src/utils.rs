@@ -262,17 +262,24 @@ impl Contract {
 
         let total_reserves = self.state.total_reserves.as_u128();
 
-        if total_reserves != 0 && balance > total_reserves {
-          self.state.total_reserves = self.state.total_reserves - total_reserves;
-          // TODO
-        }
-
         self.state.anc_emission_rate = self.get_emission_rate(
           deposit_rate,
           target_deposit_rate,
           threshold_deposit_rate,
           self.state.anc_emission_rate,
         );
+
+        if total_reserves != 0 && balance > total_reserves {
+          self.state.total_reserves = self.state.total_reserves - total_reserves;
+          fungible_token::ft_transfer(
+            self.config.collector_contract.clone(),
+            total_reserves.into(),
+            None,
+            &self.config.stable_coin_contract,
+            NO_DEPOSIT,
+            SINGLE_CALL_GAS,
+          );
+        }
       }
     }
   }
