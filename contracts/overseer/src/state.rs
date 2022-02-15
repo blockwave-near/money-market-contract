@@ -14,7 +14,6 @@ pub struct Config {
     pub target_deposit_rate: D128,
     pub buffer_distribution_factor: D128,
     pub anc_purchase_factor: D128,
-    // pub price_timeframe: BlockHeight,
     pub oracle_payment_token: AccountId,
     pub requester_contract: AccountId,
 }
