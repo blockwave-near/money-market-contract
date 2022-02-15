@@ -116,6 +116,7 @@ impl Contract {
   pub(crate) fn compute_interest_raw(
     &mut self,
     block_height: BlockHeight,
+    balance: Balance,
     stable_coin_total_supply: u128,
     borrow_rate: D128,
     target_deposit_rate: D128,
@@ -132,8 +133,6 @@ impl Contract {
     self.state.global_interest_index =
       (D128::one() + interest_factor) * self.state.global_interest_index;
     self.state.total_liabilities = interest_accrued * self.state.total_liabilities;
-
-    let balance: Balance = env::account_balance();
 
     let mut exchange_rate: D128 = self.compute_exchange_rate_raw(stable_coin_total_supply, balance);
     let effective_deposit_rate: D128 = exchange_rate / self.state.prev_exchange_rate;

@@ -2,11 +2,11 @@ use crate::*;
 
 #[ext_contract(fungible_token)]
 pub trait FungibleToken {
-  fn ft_total_supply(&self) -> PromiseOrValue<U128>;
+  fn ft_total_supply(&self) -> U128;
 
-  fn ft_balance_of(&self, account_id: AccountId) -> PromiseOrValue<U128>;
+  fn ft_balance_of(&self, account_id: AccountId) -> U128;
 
-  fn ft_transfer(&mut self, receiver_id: AccountId, amount: U128, memo: Option<String>) -> Promise;
+  fn ft_transfer(&mut self, receiver_id: AccountId, amount: U128, memo: Option<String>);
 
   fn mint(&mut self, account_id: AccountId, amount: Balance);
 
@@ -51,6 +51,13 @@ pub trait Contract {
     threshold_deposit_rate: D128,
     distributed_intereset: U128,
   );
+
+  fn callback_get_epoch_state(
+    &mut self,
+    block_height: Option<BlockHeight>,
+    balance: Balance,
+    distributed_intereset: U128,
+  ) -> (D128, U128);
 }
 
 #[near_bindgen]
@@ -66,14 +73,14 @@ impl Contract {
     match env::promise_result(0) {
       PromiseResult::NotReady => unreachable!(),
       PromiseResult::Failed => {
-        // TODO
+        env::panic("Failed Promise".as_bytes());
       }
       PromiseResult::Successful(result) => {
         let stable_coin_total_supply = near_sdk::serde_json::from_slice::<U128>(&result).unwrap().0;
         match env::promise_result(1) {
           PromiseResult::NotReady => unreachable!(),
           PromiseResult::Failed => {
-            // TODO
+            env::panic("Failed Promise".as_bytes());
           }
           PromiseResult::Successful(result) => {
             let balance = near_sdk::serde_json::from_slice::<U128>(&result).unwrap().0
@@ -89,6 +96,7 @@ impl Contract {
 
             self.compute_interest_raw(
               block_height,
+              balance,
               stable_coin_total_supply,
               borrow_rate,
               target_deposit_rate,
@@ -110,7 +118,7 @@ impl Contract {
     match env::promise_result(0) {
       PromiseResult::NotReady => unreachable!(),
       PromiseResult::Failed => {
-        env::panic("fail".as_bytes());
+        env::panic("Failed Promise".as_bytes());
       }
       PromiseResult::Successful(result) => {
         let (borrower, borrow_limit_raw) =
@@ -118,7 +126,7 @@ impl Contract {
         let borrow_limit = borrow_limit_raw.0;
 
         if borrow_limit < borrow_amount + liability.loan_amount {
-          env::panic("borrow exceed limit".as_bytes()); // TODO
+          env::panic("Borrow exceed limit".as_bytes());
         }
 
         let current_balance = env::account_balance();
@@ -250,6 +258,7 @@ impl Contract {
 
         self.compute_interest_raw(
           block_height,
+          balance,
           stable_coin_total_supply,
           borrow_rate,
           target_deposit_rate,
@@ -279,6 +288,61 @@ impl Contract {
             NO_DEPOSIT,
             SINGLE_CALL_GAS,
           );
+        }
+      }
+    }
+  }
+
+  #[private]
+  fn callback_get_epoch_state(
+    &mut self,
+    block_height: Option<BlockHeight>,
+    balance: Balance,
+    distributed_intereset: U128,
+  ) -> (D128, U128) {
+    assert_eq!(env::promise_results_count(), 2, "This is a callback method");
+
+    match env::promise_result(0) {
+      PromiseResult::NotReady => unreachable!(),
+      PromiseResult::Failed => {
+        env::panic("Failed Promise".as_bytes());
+      }
+      PromiseResult::Successful(result) => {
+        let target_deposit_rate = near_sdk::serde_json::from_slice::<D128>(&result).unwrap();
+        match env::promise_result(1) {
+          PromiseResult::NotReady => unreachable!(),
+          PromiseResult::Failed => {
+            env::panic("Failed Promise".as_bytes());
+          }
+          PromiseResult::Successful(result) => {
+            let stable_coin_total_supply =
+              near_sdk::serde_json::from_slice::<U128>(&result).unwrap().0;
+
+            if let Some(block_height) = block_height {
+              if block_height < self.state.last_interest_updated {
+                env::panic("block_height must bigger than last_interest_updated".as_bytes());
+              }
+              let borrow_rate = self.get_borrow_rate(
+                balance,
+                self.state.total_liabilities,
+                self.state.total_reserves,
+              );
+
+              self.compute_interest_raw(
+                block_height,
+                balance,
+                stable_coin_total_supply,
+                borrow_rate,
+                target_deposit_rate,
+              );
+            }
+            let exchange_rate = self.compute_exchange_rate_raw(
+              stable_coin_total_supply,
+              balance + distributed_intereset.0,
+            );
+
+            (exchange_rate, U128::from(stable_coin_total_supply))
+          }
         }
       }
     }

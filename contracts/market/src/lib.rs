@@ -147,4 +147,32 @@ impl Contract {
             SINGLE_CALL_GAS,
         ));
     }
+
+    pub fn get_epoch_state(
+        &mut self,
+        block_height: Option<BlockHeight>,
+        distributed_intereset: Option<U128>,
+    ) -> Promise {
+        let distributed_intereset = distributed_intereset.unwrap_or(U128::from(0));
+        let balance: Balance = env::account_balance() - distributed_intereset.0;
+
+        ext_overseer::get_target_deposit_rate(
+            &self.config.overseer_contract,
+            NO_DEPOSIT,
+            SINGLE_CALL_GAS,
+        )
+        .and(fungible_token::ft_total_supply(
+            &self.config.stable_coin_contract,
+            NO_DEPOSIT,
+            SINGLE_CALL_GAS,
+        ))
+        .then(ext_self::callback_get_epoch_state(
+            block_height,
+            balance,
+            distributed_intereset,
+            &env::current_account_id(),
+            NO_DEPOSIT,
+            SINGLE_CALL_GAS,
+        ))
+    }
 }
