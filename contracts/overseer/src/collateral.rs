@@ -65,6 +65,11 @@ impl Contract {
             NO_DEPOSIT,
             SINGLE_CALL_GAS,
         )
+        .and(ext_market::get_balance(
+            &self.config.market_contract,
+            NO_DEPOSIT,
+            SINGLE_CALL_GAS,
+        ))
         .then(ext_self::callback_liquidate_collateral(
             borrower,
             cur_collaterals,

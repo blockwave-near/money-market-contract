@@ -9,6 +9,10 @@ impl Contract {
         market_contract: Option<AccountId>,
         liquidation_contract: Option<AccountId>,
         collector_contract: Option<AccountId>,
+        epoch_period: Option<BlockHeight>,
+        target_deposit_rate: Option<D128>,
+        oracle_payment_token: Option<AccountId>,
+        requester_contract: Option<AccountId>,
     ) {
         self.assert_owner();
         assert_one_yocto();
@@ -23,6 +27,18 @@ impl Contract {
         }
         if let Some(collector_contract) = collector_contract {
             self.config.collector_contract = collector_contract;
+        }
+        if let Some(epoch_period) = epoch_period {
+            self.config.epoch_period = epoch_period;
+        }
+        if let Some(target_deposit_rate) = target_deposit_rate {
+            self.config.target_deposit_rate = target_deposit_rate;
+        }
+        if let Some(oracle_payment_token) = oracle_payment_token {
+            self.config.oracle_payment_token = oracle_payment_token;
+        }
+        if let Some(requester_contract) = requester_contract {
+            self.config.requester_contract = requester_contract;
         }
     }
 }

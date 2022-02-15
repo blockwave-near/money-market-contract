@@ -11,11 +11,16 @@ fn setup_contract() -> (VMContextBuilder, Contract) {
         .build());
     let contract = Contract::new(
         AccountId::from("owner"),
+        AccountId::from("stable_coin"),
         AccountId::from("oracle"),
         AccountId::from("market"),
         AccountId::from("liquidation"),
         AccountId::from("collector"),
-        D128::one(),
+        86400u64,
+        D128::new_exp(3, -3),
+        D128::new_exp(5, -3),
+        D128::new_exp(20, -2),
+        D128::new_exp(20, -2),
         AccountId::from("oralce_payment_token"),
         AccountId::from("requester"),
     );
