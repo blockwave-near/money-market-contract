@@ -15,6 +15,7 @@ pub fn setup_contract() -> (VMContextBuilder, Contract) {
     AccountId::from("stable_coin"),
     AccountId::from("overseer"),
     AccountId::from("collector"),
+    AccountId::from("distributor"),
     D128::new_exp(1, -1),
     D128::new_exp(1, -1),
     D128::new_exp(100, 0),
@@ -34,6 +35,7 @@ fn proper_compute_exchange_rate() {
     max_borrow_factor: D128::one(),
     overseer_contract: AccountId::from("overseer"),
     collector_contract: AccountId::from("collector"),
+    distributor_contract: AccountId::from("distributor"),
   };
   let mock_state = State {
     total_liabilities: D128::new(50000u128 * 100_000_000),
@@ -48,7 +50,6 @@ fn proper_compute_exchange_rate() {
   };
   let mock_deposit_amount = Some(1000000u128);
 
-  // TODO: how to resolve cross-contract call?
   // let exchange_rate = contract.compute_exchange_rate(mock_deposit_amount);
 
   // assert_eq!(exchange_rate, D128::new_exp(5, -1));

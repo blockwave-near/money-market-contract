@@ -33,7 +33,7 @@ impl Contract {
     self.assert_overseer();
 
     let cur_balance: Balance = env::account_balance();
-    let balance_diff: u128 = cur_balance - prev_balance;
+    let balance_diff: Balance = cur_balance - prev_balance;
     self.repay_stable(borrower, balance_diff);
   }
 
@@ -75,7 +75,7 @@ impl Contract {
     self.add_borrower_info_map(&borrower, &liability);
   }
 
-  pub fn claim_reward(&mut self) {
+  pub fn claim_reward(&mut self, to: Option<AccountId>) {
     let borrower = env::predecessor_account_id();
     let mut liability: BorrowerInfo = self.get_borrower_info_map(&borrower);
 
@@ -92,7 +92,13 @@ impl Contract {
 
     self.add_borrower_info_map(&borrower, &liability);
 
-    // TODO distributor contract should send reward to borrwer
+    ext_distributor::spend(
+      if let Some(to) = to { to } else { borrower },
+      claim_amount,
+      &self.config.distributor_contract,
+      NO_DEPOSIT,
+      SINGLE_CALL_GAS,
+    );
   }
 
   pub(crate) fn compute_interest(
@@ -104,7 +110,23 @@ impl Contract {
       return;
     }
 
-    self.ft_info().then(ext_self::callback_compute_interset(
+    fungible_token::ft_total_supply(
+      &self.config.stable_coin_contract,
+      NO_DEPOSIT,
+      SINGLE_CALL_GAS,
+    )
+    .and(fungible_token::ft_balance_of(
+      env::current_account_id(),
+      &self.config.stable_coin_contract,
+      NO_DEPOSIT,
+      SINGLE_CALL_GAS,
+    ))
+    .and(ext_overseer::get_target_deposit_rate(
+      &self.config.overseer_contract,
+      NO_DEPOSIT,
+      SINGLE_CALL_GAS,
+    ))
+    .then(ext_self::callback_compute_interset(
       block_height,
       deposit_amount,
       &env::current_account_id(),

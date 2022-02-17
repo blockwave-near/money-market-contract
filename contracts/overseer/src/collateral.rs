@@ -43,15 +43,15 @@ impl Contract {
             borrower,
             cur_collaterals,
             borrow_limit,
-            block_height,
             &env::current_account_id(),
             NO_DEPOSIT,
             SINGLE_CALL_GAS,
         ));
     }
 
+    // Don't use
     pub fn liquidate_collateral(&self, borrower: AccountId) {
-        let mut cur_collaterals: Tokens = self.get_collateral_map(&borrower);
+        let cur_collaterals: Tokens = self.get_collateral_map(&borrower);
 
         let (borrow_limit, collateral_prices) =
             self.compute_borrow_limit(&cur_collaterals, Some(env::block_timestamp()));
@@ -74,7 +74,6 @@ impl Contract {
             borrower,
             cur_collaterals,
             borrow_limit,
-            block_height,
             &env::current_account_id(),
             NO_DEPOSIT,
             SINGLE_CALL_GAS,
@@ -84,7 +83,7 @@ impl Contract {
     pub(crate) fn compute_borrow_limit(
         &self,
         collaterals: &Tokens,
-        block_time: Option<BlockHeight>, // TODO: What is it?
+        block_time: Option<Timestamp>, // TODO: What is it?
     ) -> (u128, Vec<D128>) {
         let mut borrow_limit: u128 = 0;
         let mut collateral_prices: Vec<D128> = vec![];

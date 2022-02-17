@@ -1,6 +1,7 @@
 #!/bin/bash
 ./build.sh
-near dev-deploy \
+near deploy \
+    --accountId market.synchro.testnet \
     --wasmFile res/market.wasm \
     --initFunction new \
     --initArgs '{

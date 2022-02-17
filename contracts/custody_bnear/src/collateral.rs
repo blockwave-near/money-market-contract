@@ -3,7 +3,7 @@ use crate::*;
 #[near_bindgen]
 impl Contract {
   // Executor: bAsset token contract
-  pub(crate) fn deposit_collateal(&mut self, borrower: AccountId, amount: Balance) {
+  pub(crate) fn deposit_collateral(&mut self, borrower: AccountId, amount: Balance) {
     let mut borrower_info: BorrowerInfo = self.get_borrower_info_map(&borrower);
 
     borrower_info.balance += amount;

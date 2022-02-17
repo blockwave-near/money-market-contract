@@ -15,6 +15,7 @@ pub fn setup_contract() -> (VMContextBuilder, Contract) {
     AccountId::from("stable_coin"),
     AccountId::from("overseer"),
     AccountId::from("collector"),
+    AccountId::from("distributor"),
     D128::new_exp(1, -1),
     D128::new_exp(1, -1),
     D128::new_exp(100, 0),
@@ -93,6 +94,7 @@ fn proper_compute_interest() {
     max_borrow_factor: D128::one(),
     overseer_contract: AccountId::from("overseer"),
     collector_contract: AccountId::from("collector"),
+    distributor_contract: AccountId::from("distributor"),
   };
 
   let mut mock_state = State {
@@ -127,7 +129,6 @@ fn proper_compute_interest() {
     }
   );
 
-  // TODO: how to resolve cross-contract call?
   // testing_env!(context
   //   .block_index(context.context.block_index + 100)
   //   .build());

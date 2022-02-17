@@ -8,6 +8,7 @@ pub struct Config {
   pub max_borrow_factor: D128,
   pub overseer_contract: AccountId,
   pub collector_contract: AccountId,
+  pub distributor_contract: AccountId,
 }
 
 #[derive(

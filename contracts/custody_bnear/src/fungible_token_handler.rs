@@ -18,7 +18,7 @@ impl FungibleTokenReceiver for Contract {
         msg: String,
     ) -> PromiseOrValue<U128> {
         if env::predecessor_account_id() == self.config.collateral_token {
-            self.deposit_collateal(sender_id, amount.0);
+            self.deposit_collateral(sender_id, amount.0);
             return PromiseOrValue::Value(U128(0));
         } else {
             env::log(b"Only whitelisted tokens can transfer_call to this");

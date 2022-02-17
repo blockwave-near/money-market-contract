@@ -4,7 +4,7 @@ use near_sdk::json_types::{ValidAccountId, U128};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{
     assert_one_yocto, env, ext_contract, near_bindgen, AccountId, Balance, BlockHeight,
-    BorshStorageKey, Gas, PanicOnDefault, Promise, PromiseOrValue, PromiseResult,
+    BorshStorageKey, Gas, PanicOnDefault, Promise, PromiseOrValue, PromiseResult, Timestamp,
 };
 
 use uint::construct_uint;
@@ -14,7 +14,7 @@ use crate::distribution_model::DistributionModelConfig;
 use crate::interest_model::InterestModelConfig;
 use crate::math::D128;
 use crate::state::{BorrowerInfo, Collection, Config, State};
-use crate::utils::{ext_overseer, ext_self, fungible_token};
+use crate::utils::{ext_distributor, ext_overseer, ext_self, fungible_token};
 
 mod borrow;
 mod deposit;
@@ -64,6 +64,7 @@ impl Contract {
         stable_coin_contract: AccountId,
         overseer_contract: AccountId,
         collector_contract: AccountId,
+        distributor_contract: AccountId,
 
         base_rate: D128,
         interest_multiplier: D128,
@@ -85,6 +86,7 @@ impl Contract {
             stable_coin_contract,
             overseer_contract,
             collector_contract,
+            distributor_contract,
         };
 
         let state = State {

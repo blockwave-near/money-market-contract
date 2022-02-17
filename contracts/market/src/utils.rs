@@ -19,9 +19,14 @@ pub trait OverseerContract {
     &self,
     borrower: AccountId,
     block_time: Option<BlockHeight>,
-  ) -> PromiseOrValue<(AccountId, U128)>;
+  ) -> (AccountId, U128);
 
-  fn get_target_deposit_rate(&self) -> PromiseOrValue<D128>;
+  fn get_target_deposit_rate(&self) -> D128;
+}
+
+#[ext_contract(ext_distributor)]
+pub trait CollectorContract {
+  fn spend(&mut self, receiver_id: AccountId, amount: Balance);
 }
 
 #[ext_contract(ext_self)]
@@ -68,7 +73,7 @@ impl Contract {
     block_height: BlockHeight,
     deposit_amount: Option<Balance>,
   ) {
-    assert_eq!(env::promise_results_count(), 2, "This is a callback method");
+    assert_eq!(env::promise_results_count(), 3, "This is a callback method");
 
     match env::promise_result(0) {
       PromiseResult::NotReady => unreachable!(),
@@ -86,21 +91,29 @@ impl Contract {
             let balance = near_sdk::serde_json::from_slice::<U128>(&result).unwrap().0
               - deposit_amount.unwrap_or(0);
 
-            let borrow_rate = self.get_borrow_rate(
-              balance,
-              self.state.total_liabilities,
-              self.state.total_reserves,
-            );
+            match env::promise_result(2) {
+              PromiseResult::NotReady => unreachable!(),
+              PromiseResult::Failed => {
+                env::panic("Failed Promise".as_bytes());
+              }
+              PromiseResult::Successful(result) => {
+                let target_deposit_rate =
+                  near_sdk::serde_json::from_slice::<D128>(&result).unwrap();
+                let borrow_rate = self.get_borrow_rate(
+                  balance,
+                  self.state.total_liabilities,
+                  self.state.total_reserves,
+                );
 
-            let target_deposit_rate = D128::one(); // TODO after overseer contract
-
-            self.compute_interest_raw(
-              block_height,
-              balance,
-              stable_coin_total_supply,
-              borrow_rate,
-              target_deposit_rate,
-            )
+                self.compute_interest_raw(
+                  block_height,
+                  balance,
+                  stable_coin_total_supply,
+                  borrow_rate,
+                  target_deposit_rate,
+                )
+              }
+            }
           }
         }
       }
@@ -108,11 +121,7 @@ impl Contract {
   }
 
   #[private]
-  pub fn callback_borrow_stable(
-    &mut self,
-    borrow_amount: Balance,
-    liability: &mut BorrowerInfo,
-  ) -> (AccountId, u128) {
+  pub fn callback_borrow_stable(&mut self, borrow_amount: Balance, liability: &mut BorrowerInfo) {
     assert_eq!(env::promise_results_count(), 1, "This is a callback method");
 
     match env::promise_result(0) {
@@ -138,7 +147,14 @@ impl Contract {
 
         self.add_borrower_info_map(&borrower, liability);
 
-        return (borrower, borrow_amount);
+        fungible_token::ft_transfer(
+          borrower,
+          borrow_amount.into(),
+          None,
+          &self.config.stable_coin_contract,
+          NO_DEPOSIT,
+          SINGLE_CALL_GAS,
+        );
       }
     }
   }
@@ -167,7 +183,7 @@ impl Contract {
   }
 
   #[private]
-  fn callback_deposit_stable(&mut self, deposit_amount: Balance, depositor: AccountId) {
+  pub fn callback_deposit_stable(&mut self, deposit_amount: Balance, depositor: AccountId) {
     assert_eq!(env::promise_results_count(), 1, "This is a callback method");
 
     match env::promise_result(0) {
@@ -193,7 +209,7 @@ impl Contract {
   }
 
   #[private]
-  fn callback_redeem_stable(&mut self, burn_amount: Balance, redeemer: AccountId) {
+  pub fn callback_redeem_stable(&mut self, burn_amount: Balance, redeemer: AccountId) {
     assert_eq!(env::promise_results_count(), 1, "This is a callback method");
 
     match env::promise_result(0) {
@@ -230,6 +246,7 @@ impl Contract {
       }
     }
   }
+
   #[private]
   pub fn callback_execute_epoch_operations(
     &mut self,
@@ -294,7 +311,7 @@ impl Contract {
   }
 
   #[private]
-  fn callback_get_epoch_state(
+  pub fn callback_get_epoch_state(
     &mut self,
     block_height: Option<BlockHeight>,
     balance: Balance,

@@ -30,7 +30,7 @@ pub trait Contract {
 #[near_bindgen]
 impl Contract {
   #[private]
-  fn callback_distribute_rewards(&mut self, REWARDS_THRESHOLD: Balance) {
+  pub fn callback_distribute_rewards(&mut self, REWARDS_THRESHOLD: Balance) {
     assert_eq!(env::promise_results_count(), 1, "This is a callback method");
 
     match env::promise_result(0) {
@@ -50,7 +50,8 @@ impl Contract {
     }
   }
 
-  fn callback_distribute_hook(&self) {
+  #[private]
+  pub fn callback_distribute_hook(&self) {
     assert_eq!(env::promise_results_count(), 1, "This is a callback method");
 
     match env::promise_result(0) {

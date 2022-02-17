@@ -1,7 +1,6 @@
 #!/bin/bash
 ./build.sh
-near dev-deploy \
-    --accountId overseer.synchro.testnet \
+near deploy \
     --wasmFile res/overseer.wasm \
     --initFunction new \
     --initArgs '{

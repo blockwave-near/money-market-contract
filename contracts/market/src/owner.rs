@@ -10,6 +10,7 @@ impl Contract {
     max_borrow_factor: Option<D128>,
     overseer_contract: Option<AccountId>,
     collector_contract: Option<AccountId>,
+    distributor_contract: Option<AccountId>,
   ) {
     self.assert_owner();
     assert_one_yocto();
@@ -28,6 +29,9 @@ impl Contract {
     }
     if let Some(collector_contract) = collector_contract {
       self.config.collector_contract = collector_contract;
+    }
+    if let Some(distributor_contract) = distributor_contract {
+      self.config.distributor_contract = distributor_contract;
     }
   }
 

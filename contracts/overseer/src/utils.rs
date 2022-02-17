@@ -39,7 +39,6 @@ pub trait Contract {
         borrower: AccountId,
         cur_collaterals: Tokens,
         borrow_limit: u128,
-        block_height: BlockHeight,
     );
 
     fn callback_liquidate_collateral(
@@ -47,7 +46,6 @@ pub trait Contract {
         borrower: AccountId,
         cur_collaterals: Tokens,
         borrow_limit: u128,
-        block_height: BlockHeight,
     );
 
     fn callback_liquidate_collateral2(
@@ -58,11 +56,7 @@ pub trait Contract {
         prev_balance: Balance,
     );
 
-    fn callback_execute_epoch_operations(
-        &mut self,
-        blocks: BlockHeight,
-        mut interest_buffer: Balance,
-    );
+    fn callback_execute_epoch_operations(&mut self, blocks: BlockHeight, interest_buffer: Balance);
 
     fn callback_update_epoch_state(
         &mut self,
@@ -167,12 +161,11 @@ impl Contract {
     }
 
     #[private]
-    fn callback_unlock_collateral(
+    pub fn callback_unlock_collateral(
         &mut self,
         borrower: AccountId,
         cur_collaterals: Tokens,
         borrow_limit: u128,
-        block_height: BlockHeight,
     ) {
         assert_eq!(env::promise_results_count(), 1, "This is a callback method");
 
@@ -182,9 +175,9 @@ impl Contract {
                 env::panic("fail".as_bytes());
             }
             PromiseResult::Successful(result) => {
-                let borrowerInfo: BorrowerInfo =
+                let borrower_info: BorrowerInfo =
                     near_sdk::serde_json::from_slice::<BorrowerInfo>(&result).unwrap();
-                if borrow_limit < borrowerInfo.loan_amount {
+                if borrow_limit < borrower_info.loan_amount {
                     env::panic("UnlockTooLarge".as_bytes());
                 }
 
@@ -193,7 +186,7 @@ impl Contract {
                 for collateral in cur_collaterals.clone() {
                     let white_list_elem: WhitelistElem =
                         self.get_white_list_elem_map(&collateral.0);
-                    // TODO handle result with {borrwer, amount} from custody
+
                     ext_custody_bnear::unlock_collateral(
                         borrower.clone(),
                         collateral.1,
@@ -207,12 +200,11 @@ impl Contract {
     }
 
     #[private]
-    fn callback_liquidate_collateral(
+    pub fn callback_liquidate_collateral(
         &mut self,
         borrower: AccountId,
         cur_collaterals: Tokens,
         borrow_limit: u128,
-        block_height: BlockHeight,
     ) {
         assert_eq!(env::promise_results_count(), 2, "This is a callback method");
 
@@ -222,7 +214,7 @@ impl Contract {
                 env::panic("fail".as_bytes());
             }
             PromiseResult::Successful(result) => {
-                let borrowerInfo: BorrowerInfo =
+                let borrower_info: BorrowerInfo =
                     near_sdk::serde_json::from_slice::<BorrowerInfo>(&result).unwrap();
 
                 match env::promise_result(1) {
@@ -233,7 +225,7 @@ impl Contract {
                     PromiseResult::Successful(result) => {
                         let prev_balance: Balance =
                             near_sdk::serde_json::from_slice::<Balance>(&result).unwrap();
-                        let borrow_amount = borrowerInfo.loan_amount;
+                        let borrow_amount = borrower_info.loan_amount;
                         if borrow_limit >= borrow_amount {
                             env::panic("CannotLiquidationSafeLoan".as_bytes());
                         }
@@ -258,7 +250,8 @@ impl Contract {
         }
     }
 
-    fn callback_liquidate_collateral2(
+    #[private]
+    pub fn callback_liquidate_collateral2(
         &mut self,
         sender: AccountId,
         borrower: AccountId,
@@ -308,10 +301,10 @@ impl Contract {
     }
 
     #[private]
-    fn callback_execute_epoch_operations(
+    pub fn callback_execute_epoch_operations(
         &mut self,
         blocks: BlockHeight,
-        mut interest_buffer: Balance,
+        interest_buffer: Balance,
     ) {
         assert_eq!(env::promise_results_count(), 1, "This is a callback method");
 
@@ -321,9 +314,9 @@ impl Contract {
                 env::panic("fail".as_bytes());
             }
             PromiseResult::Successful(result) => {
-                let (exchange_rate, mut stable_coin_total_supply): (D128, U128) =
+                let (exchange_rate, raw_stable_coin_total_supply): (D128, U128) =
                     near_sdk::serde_json::from_slice::<(D128, U128)>(&result).unwrap();
-                let stable_coin_total_supply: Balance = stable_coin_total_supply.0;
+                let stable_coin_total_supply = raw_stable_coin_total_supply.0;
 
                 let effective_deposit_rate = exchange_rate / self.state.prev_exchange_rate;
                 let deposit_rate = (effective_deposit_rate - D128::one()) / blocks as u128;
@@ -343,7 +336,7 @@ impl Contract {
                     );
                 }
 
-                interest_buffer = interest_buffer - anc_purchase_amount;
+                let mut new_interest_buffer = interest_buffer - anc_purchase_amount;
 
                 let mut distributed_intereset: u128 = 0;
 
@@ -360,7 +353,7 @@ impl Contract {
                         .mul_int(interest_buffer);
 
                     distributed_intereset = std::cmp::min(missing_deposits, distribution_buffer);
-                    interest_buffer = interest_buffer - distributed_intereset;
+                    new_interest_buffer = interest_buffer - distributed_intereset;
 
                     if distributed_intereset != 0 {
                         // TODO should be deduct_tax?
@@ -383,13 +376,13 @@ impl Contract {
                     );
                 }
 
-                self.update_epoch_state(interest_buffer.into(), distributed_intereset.into());
+                self.update_epoch_state(new_interest_buffer.into(), distributed_intereset.into());
             }
         }
     }
 
     #[private]
-    fn callback_update_epoch_state(
+    pub fn callback_update_epoch_state(
         &mut self,
         intereset_buffer: U128,
         distributed_intereset: U128,
@@ -404,7 +397,7 @@ impl Contract {
                 env::panic("fail".as_bytes());
             }
             PromiseResult::Successful(result) => {
-                let (exchange_rate, mut stable_coin_total_supply): (D128, U128) =
+                let (exchange_rate, stable_coin_total_supply): (D128, U128) =
                     near_sdk::serde_json::from_slice::<(D128, U128)>(&result).unwrap();
 
                 let effective_deposit_rate = exchange_rate / self.state.prev_exchange_rate;

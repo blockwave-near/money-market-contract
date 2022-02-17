@@ -4,7 +4,7 @@ use near_sdk::json_types::{ValidAccountId, U128};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{
     assert_one_yocto, env, ext_contract, near_bindgen, AccountId, Balance, BlockHeight,
-    BorshStorageKey, Gas, PanicOnDefault, Promise, PromiseOrValue, PromiseResult,
+    BorshStorageKey, Gas, PanicOnDefault, Promise, PromiseOrValue, PromiseResult, Timestamp,
 };
 
 use uint::construct_uint;

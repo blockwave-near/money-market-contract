@@ -17,7 +17,7 @@ impl Contract {
     pub fn get_borrow_limit(
         &self,
         borrower: AccountId,
-        block_time: Option<BlockHeight>,
+        block_time: Option<Timestamp>,
     ) -> (AccountId, U128) {
         let collaterals = self.get_collateral_map(&borrower);
 
