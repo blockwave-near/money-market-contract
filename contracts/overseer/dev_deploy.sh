@@ -12,20 +12,20 @@ near dev-deploy \
         "liquidation_contract": "liquidation.synchro.testnet",
         "collector_contract": "collector.synchro.testnet",
         "epoch_period": 86400,
-        "threshold_deposit_rate: {
-            "num": 300000,
+        "threshold_deposit_rate": {
+            "num": "300000",
             "decimal": 100000000
         },
-        "target_deposit_rate: {
-            "num": 500000,
+        "target_deposit_rate": {
+            "num": "500000",
             "decimal": 100000000
         },
-        "buffer_distribution_factor: {
-            "num": 20000000,
+        "buffer_distribution_factor": {
+            "num": "20000000",
             "decimal": 100000000
         },
-        "anc_purchase_factor: {
-            "num": 20000000,
+        "anc_purchase_factor": {
+            "num": "20000000",
             "decimal": 100000000
         },
         "oracle_payment_token": "",
