@@ -14,6 +14,6 @@ near dev-deploy \
         "basset_info": {
             "name": "bnear",
             "symbol": "bNear",
-            "decimals": 8,
-        },
+            "decimals": 8
+        }
     }'
