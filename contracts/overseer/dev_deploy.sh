@@ -3,6 +3,7 @@
 near dev-deploy \
     --accountId overseer.synchro.testnet \
     --wasmFile res/overseer.wasm \
+    --initGas 30000000000000000
     --initFunction new \
     --initArgs '{
         "owner_id": "blockwave.testnet",

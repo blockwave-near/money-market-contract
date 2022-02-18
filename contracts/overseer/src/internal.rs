@@ -16,14 +16,14 @@ impl Contract {
             env::current_account_id().try_into().unwrap(),
             // Near params
             &self.config.requester_contract,
-            0,
-            3_000_000_000_000,
+            NO_DEPOSIT,
+            SINGLE_CALL_GAS,
         )
         .then(ext_self::callback_get_price_response(
             // Near params
             &env::current_account_id(),
-            0,
-            30_000_000_000_000,
+            NO_DEPOSIT,
+            SINGLE_CALL_GAS,
         ))
     }
 
