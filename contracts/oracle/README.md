@@ -1,4 +1,4 @@
-# Requester Sample Contract
+# Flux Requester Contract
 
 Interested in integrating with the Flux Oracle? **Requester Contracts** can be used to create and submit data requests to the Flux Oracle -- here you will find a sample contract to get you started!
 
@@ -14,7 +14,7 @@ REQUESTER=requester.account.testnet
 ACCOUNT=account.testnet
 
 # create requester account (or use `scripts/reset_account.sh`)
-NEAR_ENV=testnet near create-account $REQUESTER --masterAccount $ACCOUNT --initialBalance 5
+NEAR_ENV=testnet near create-account $REQUESTER --masterAccount $ACCOUNT --initialBalance 10
 
 sh build.sh
 
@@ -35,12 +35,8 @@ REQUESTER=requester.account.testnet
 # send an example arbitrator request at the requester contract that you just deployed
 bash ./scripts/new_request.sh --accountId $REQUESTER --paymentToken v2.wnear.flux-dev  --senderId $ACCOUNT
 
-# retrieve the details of the request that you just created (request at index 0)
-sh scripts/get_request.sh $REQUESTER 0
-
-# once you've sent more requests, you can call the `get_request` script with the
-# exact index number you're interested in to view the details of the request at
-# that specific index
+# retrieve the details of the request that you just created (request at accountId)
+sh scripts/get_request.sh $REQUESTER $ACCOUNT
 ```
 
 ## Options
