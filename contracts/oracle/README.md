@@ -32,7 +32,7 @@ bash scripts/reset_account.sh --master $ACCOUNT --account $REQUESTER
 # set vars
 REQUESTER=requester.account.testnet
 
-# send an example arbitrator request at the requester contract that you just deployed
+# send an NEAR price feed request at the requester contract that you just deployed
 bash ./scripts/new_request.sh --accountId $REQUESTER --paymentToken v2.wnear.flux-dev  --senderId $ACCOUNT
 
 # retrieve the details of the request that you just created (request at accountId)
