@@ -83,7 +83,7 @@ impl Contract {
     pub(crate) fn compute_borrow_limit(
         &self,
         collaterals: &Tokens,
-        block_time: Option<Timestamp>, // TODO: What is it?
+        block_time: Option<Timestamp>,
     ) -> (u128, Vec<D128>) {
         let mut borrow_limit: u128 = 0;
         let mut collateral_prices: Vec<D128> = vec![];

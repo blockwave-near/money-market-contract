@@ -136,7 +136,9 @@ impl Contract {
         max_ltv: D128,
     ) {
         assert_one_yocto();
+        self.assert_owner();
         self.internal_update_price_response();
+
         self.add_white_list_elem_map(
             &collateral_token,
             &WhitelistElem {
@@ -156,6 +158,7 @@ impl Contract {
         max_ltv: Option<D128>,
     ) {
         assert_one_yocto();
+        self.assert_owner();
         self.internal_update_price_response();
         let mut white_list_elem: WhitelistElem = self.get_white_list_elem_map(&collateral_token);
 
@@ -182,7 +185,7 @@ impl Contract {
         let block_height = env::block_index();
         let blocks = block_height - self.state.last_executed_height;
 
-        let mut interest_buffer = env::account_balance();
+        let interest_buffer = env::account_balance();
 
         ext_market::get_epoch_state(
             Some(block_height),
